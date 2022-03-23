@@ -1,0 +1,7 @@
+{:paths   ["src"]
+ :deps    {org.clojure/clojure {:mvn/version "1.10.3"}}
+ :aliases {:clj-async-profiler {:extra-deps {com.clojure-goes-fast/clj-async-profiler {:mvn/version "0.5.1"}}
+                                :jvm-opts   ["-Djdk.attach.allowAttachSelf" "-XX:+UnlockDiagnosticVMOptions" "-XX:+DebugNonSafepoints"]}
+           :env/test           {:extra-paths ["test"]
+                                :extra-deps  {com.gfredericks/test.chuck {:mvn/version "0.2.13"}
+                                              org.clojure/test.check     {:mvn/version "1.1.1"}}}}}

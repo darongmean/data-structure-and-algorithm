@@ -1,0 +1,11 @@
+.cpcache/
+.DS_Store
+.idea
+*.log
+tmp/
+.hgignore
+.nrepl-port
+.lsp
+*.iml
+.clj-kondo
+target
