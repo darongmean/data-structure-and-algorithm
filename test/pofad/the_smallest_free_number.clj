@@ -36,3 +36,16 @@
 (defspec brute-force-method-test
   (prop/for-all [v (gen/return [8 2 3 0 12 4 1 6])]
     (is (= 5 (min-free-01 v)))))
+
+(defn difference-by-set [seq1 seq2]
+  (let [member-seq2? (set seq2)]
+    (remove member-seq2? seq1)))
+
+(defn min-free-02 [num-seq]
+  (->> (difference-by-set (range) num-seq)
+       (first)))
+
+
+(defspec solve-by-set-test
+  (prop/for-all [v (gen/return [8 2 3 0 12 4 1 6])]
+    (is (= 5 (min-free-02 v)))))
