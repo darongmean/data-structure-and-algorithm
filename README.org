@@ -3,8 +3,9 @@
 What's better to kill time?
 
 =TODO=
-- Pearls of Functional Algorithm Design
+- Pearls of Functional Algorithm Design (pofad)
 - Purely Functional Data Structures
+- Algorithm Design with Haskell by Richard Bird and Jeremy Gibbons (adwh)
 - https://cstheory.stackexchange.com/questions/1539/whats-new-in-purely-functional-data-structures-since-okasaki
 - Clojure data structures and algorithms cookbook
 
