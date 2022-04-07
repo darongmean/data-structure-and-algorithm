@@ -33,3 +33,12 @@
     (prop/for-all [xs (gen/vector gen/nat 0 3)]
       (is (= (->> xs (map f) (map g))
              (map #(->> % f g) xs))))))
+
+;;; one-step traversal fusion law
+;;; concatMap f . map g = concatMap (f . g)
+(defspec mapcat-fusion-test
+  (let [g (fn [x] [x (* 2 x)])
+        f inc]
+    (prop/for-all [xs (gen/vector gen/nat 0 3)]
+      (is (= (->> xs (map f) (mapcat g))
+             (mapcat #(->> % f g) xs))))))
