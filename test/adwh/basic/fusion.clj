@@ -4,6 +4,7 @@
   one-step traversal fusion law:
   > map f . map g  = map (f . g)
   > concatMap f . map g = concatMap (f . g)
+  > foldr f e · map g = foldr (f · g) e
 
   foldl fusion law:
   > f . foldl g a = foldl h b
@@ -45,3 +46,14 @@
     (prop/for-all [xs gen-xs]
       (is (= (->> xs (map f) (mapcat g))
              (mapcat #(->> % f g) xs))))))
+
+;;; one-step traversal fusion law
+;;; foldr f e · map g = foldr (f · g) e
+(defspec fold-map-fusion-test
+  (let [g -
+        f inc]
+    (prop/for-all [xs gen-xs]
+      (is (= (->> xs (map f) (reduce g 0))
+             (reduce (fn [acc x] (->> x f (g acc)))
+                     0
+                     xs))))))
