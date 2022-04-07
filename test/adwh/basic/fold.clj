@@ -21,3 +21,11 @@
            (reduce (fn [acc x] (conj acc x))
                    '()
                    xs)))))
+
+;; map using fold
+(defspec map-test
+  (prop/for-all [xs gen-xs]
+    (is (= (map inc xs)
+           (reduce (fn [acc x] (conj acc (inc x)))
+                   []
+                   xs)))))
