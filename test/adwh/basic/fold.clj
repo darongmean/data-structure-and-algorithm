@@ -24,8 +24,9 @@
 
 ;;; implement map using fold
 (defspec map-test
-  (prop/for-all [xs gen-xs]
-    (is (= (map inc xs)
-           (reduce (fn [acc x] (conj acc (inc x)))
-                   []
-                   xs)))))
+  (let [f inc]
+    (prop/for-all [xs gen-xs]
+      (is (= (map f xs)
+             (reduce (fn [acc x] (conj acc (f x)))
+                     []
+                     xs))))))
