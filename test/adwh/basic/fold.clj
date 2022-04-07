@@ -14,7 +14,7 @@
 (def gen-xs
   (gen/vector gen/nat 0 3))
 
-;;; reverse as an instance of fold
+;;; implement reverse using fold
 (defspec reverse-test
   (prop/for-all [xs gen-xs]
     (is (= (reverse xs)
@@ -22,7 +22,7 @@
                    '()
                    xs)))))
 
-;; map using fold
+;;; implement map using fold
 (defspec map-test
   (prop/for-all [xs gen-xs]
     (is (= (map inc xs)
