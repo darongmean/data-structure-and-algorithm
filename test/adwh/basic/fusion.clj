@@ -7,18 +7,16 @@
   > foldr f e · map g = foldr (f · g) e
 
   foldl fusion law:
-  > f . foldl g a = foldl h b
+  > g . foldl f e = foldl h (g e)
   provided that
-  > f is strict
-  > f a = b
-  > f (g x y) = h (f x) y
+  > g is strict
+  > g (f y x) = h (g y) x
 
   foldr fusion law (not applicable to Clojure since Clojure has no support for foldr):
-  > f . foldr g a = foldr h b
+  > g . foldr f e = foldr h (g e)
   provided that
-  > f is strict
-  > f a = b
-  > f (g x y) = h x (f y)
+  > g is strict
+  > g (f x y) = h x (g y)
   "
   (:require
     [clojure.test :refer [is]]
@@ -57,3 +55,28 @@
              (reduce (fn [acc x] (->> x f (g acc)))
                      0
                      xs))))))
+
+;;; foldl fusion law:
+;;; g . foldl f e = foldl h (g e)
+;;;
+;;; provided that
+;;; - g is strict
+;;; - g (f y x) = h (g y) x
+(def f -)
+
+(def g inc)
+
+(def h
+  ;; It is a coincidence that h = f in this example.
+  f)
+
+(defspec foldl-fusion-precondition-test
+  (prop/for-all [x gen/nat
+                 y gen/nat]
+    (is (= (g (f y x))
+           (h (g y) x)))))
+
+(defspec foldl-fusion-test
+  (prop/for-all [xs gen-xs]
+    (is (= (->> xs (reduce f 0) g)
+           (reduce h (g 0) xs)))))
