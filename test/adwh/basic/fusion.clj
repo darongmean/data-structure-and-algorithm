@@ -25,12 +25,15 @@
     [clojure.test.check.generators :as gen]
     [clojure.test.check.properties :as prop]))
 
+(def gen-xs
+  (gen/vector gen/nat 0 3))
+
 ;;; one-step traversal fusion law
 ;;; map f . map g  = map (f . g)
 (defspec map-fusion-test
   (let [f inc
         g #(* 2 %)]
-    (prop/for-all [xs (gen/vector gen/nat 0 3)]
+    (prop/for-all [xs gen-xs]
       (is (= (->> xs (map f) (map g))
              (map #(->> % f g) xs))))))
 
@@ -39,6 +42,6 @@
 (defspec mapcat-fusion-test
   (let [g (fn [x] [x (* 2 x)])
         f inc]
-    (prop/for-all [xs (gen/vector gen/nat 0 3)]
+    (prop/for-all [xs gen-xs]
       (is (= (->> xs (map f) (mapcat g))
              (mapcat #(->> % f g) xs))))))
