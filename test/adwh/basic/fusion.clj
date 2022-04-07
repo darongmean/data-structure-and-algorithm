@@ -16,6 +16,10 @@
   > foldr f e · concat xss = foldr (foldr f x xs) e xss
     where concat :: [[a]] -> [a]
 
+  fold-filter fusion law:
+  > foldr f e . filter p = foldr g e
+    where g = if (p x) then (f x y) else y
+
   foldr fusion law (not applicable to Clojure since Clojure has no support for foldr):
   > g . foldr f e = foldr h (g e)
   provided that
@@ -111,3 +115,17 @@
            (reduce (fn [acc xs] (reduce - acc xs))
                    0
                    xss)))))
+
+;;; fold-filter fusion law
+;;; foldr f e . filter p = foldr h e
+(defspec foldl-filter-fusion-test
+  (let [f -
+        p even?]
+    (prop/for-all [xs gen-xs]
+      (is (= (->> xs (filter p) (reduce f 0))
+             (reduce (fn [acc x]
+                       (if (p x)
+                         (f acc x)
+                         acc))
+                     0
+                     xs))))))
