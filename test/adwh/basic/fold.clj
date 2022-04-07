@@ -30,3 +30,15 @@
              (reduce (fn [acc x] (conj acc (f x)))
                      []
                      xs))))))
+
+;;; implement filter using fold
+(defspec filter-test
+  (let [f even?]
+    (prop/for-all [xs gen-xs]
+      (is (= (filter f xs)
+             (reduce (fn [acc x]
+                       (if (f x)
+                         (conj acc x)
+                         acc))
+                     []
+                     xs))))))
