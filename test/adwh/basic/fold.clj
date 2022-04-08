@@ -15,6 +15,11 @@
   (gen/vector gen/nat 0 3))
 
 ;;; implement reverse using fold
+(defn reverse-step [acc x]
+  {:pre [(or (nil? acc) (list? acc))]}
+  ;; take advantage of conj that conj put last element to the first position of a list
+  (conj (or acc '()) x))
+
 (defspec reverse-test
   (prop/for-all [xs gen-xs]
     ;; "rseq" is faster than "reverse" for vector, sorted-set, and sorted-map
@@ -28,42 +33,45 @@
     ;; - "reverse" return empty collection on empty collection
     (is (= (rseq xs)
            ;; take advantage of conj that conj put last element to the first position of a list
-           (reduce (fn [acc x] (conj (or acc '()) x))
-                   nil
-                   xs)))))
+           (reduce reverse-step nil xs)))))
 
 ;;; implement map using fold
+(defn map-step [f acc x]
+  {:pre [(vector? acc)]}
+  (conj acc (f x)))
+
 (defspec map-test
   (let [f inc]
     (prop/for-all [xs gen-xs]
       (is (= (map f xs)
-             (reduce (fn [acc x] (conj acc (f x)))
-                     []
-                     xs))))))
+             (reduce (partial map-step f) [] xs))))))
 
 ;;; implement filter using fold
+(defn filter-step [f acc x]
+  {:pre [(vector? acc)]}
+  (if (f x)
+    (conj acc x)
+    acc))
+
 (defspec filter-test
   (let [f even?]
     (prop/for-all [xs gen-xs]
       (is (= (filter f xs)
-             (reduce (fn [acc x]
-                       (if (f x)
-                         (conj acc x)
-                         acc))
-                     []
-                     xs))))))
+             (reduce (partial filter-step f) [] xs))))))
 
 ;;; implement take-while using fold
+(defn take-while-step [p acc x]
+  {:pre [(vector? acc)]}
+  (if (p x)
+    (conj acc x)
+    ;; "reduced" make sure "reduce" terminate early
+    (reduced acc)))
+
 (defspec take-while-test
   (let [p even?]
     (prop/for-all [xs gen-xs]
       (is (= (take-while p xs)
-             (reduce (fn [acc x]
-                       (if (p x)
-                         (conj acc x)
-                         (reduced acc)))
-                     []
-                     xs))))))
+             (reduce (partial take-while-step p) [] xs))))))
 
 ;;; implement drop-while-end using fold
 (defn drop-while-end
@@ -77,15 +85,17 @@
        (drop-while pred)
        reverse))
 
+(defn drop-while-end-step [p acc x]
+  {:pre [(list? acc)]}
+  (if (and (p x) (empty? acc))
+    acc
+    ;; take advantage of conj that conj put last element to the first position of a list
+    (conj acc x)))
+
 (defspec drop-while-end-test
   (let [p even?]
     (prop/for-all [xs gen-xs]
       (is (= (drop-while-end p xs)
-             (->> xs
-                  rseq
-                  (reduce (fn [acc x]
-                            (if (and (p x) (empty? acc))
-                              acc
-                              ;; take advantage of conj that conj put last element to the first position of a list
-                              (conj acc x)))
-                          '())))))))
+             (reduce (partial drop-while-end-step p)
+                     '()
+                     (rseq xs)))))))
