@@ -47,10 +47,18 @@
 ;;; fraction function
 (defn fraction [xs]
   (let [shift (fn [n x]
-                (* (+ n x) 0.1))]
+                (/ (+ n x) 10))]
     (foldr shift 0 xs)))
 
 (defspec fraction-test
   (prop/for-all [xs (gen/return [1 4 8 4 9 3])]
-    (is (= 0.148493
-           (fraction xs)))))
+    (is (== 0.148493
+            (fraction xs)))))
+
+;;; round-trip property test
+(def gen-xs (gen/vector (gen/large-integer* {:min 0 :max 9}) 0 3))
+
+(defspec round-trip-property-test
+  (prop/for-all [xs gen-xs]
+    (is (== (integer xs)
+            (* (fraction xs) (bigdec (Math/pow 10 (count xs))))))))
