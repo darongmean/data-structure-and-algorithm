@@ -42,3 +42,15 @@
                          acc))
                      []
                      xs))))))
+
+;;; implement take-while using fold
+(defspec take-while-test
+  (let [p even?]
+    (prop/for-all [xs gen-xs]
+      (is (= (take-while p xs)
+             (reduce (fn [acc x]
+                       (if (p x)
+                         (conj acc x)
+                         (reduced acc)))
+                     []
+                     xs))))))
