@@ -43,3 +43,14 @@
   (prop/for-all [xs (gen/return [1 4 8 4 9 3])]
     (is (= 148493
            (integer xs)))))
+
+;;; fraction function
+(defn fraction [xs]
+  (let [shift (fn [n x]
+                (* (+ n x) 0.1))]
+    (foldr shift 0 xs)))
+
+(defspec fraction-test
+  (prop/for-all [xs (gen/return [1 4 8 4 9 3])]
+    (is (= 0.148493
+           (fraction xs)))))
