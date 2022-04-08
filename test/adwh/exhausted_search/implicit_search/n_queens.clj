@@ -1,0 +1,161 @@
+(ns adwh.exhausted-search.implicit-search.n-queens
+  "The simple idea of an exhaustive search based on the pattern
+   > solutions = filter good · candidates
+
+   The function candidates generates a list of possible candidates from some given data,
+   and the filter operation extracts those that are 'good'.
+
+   To find just one – assuming of course that one exists – we can use the idiom
+   > solution = head · solutions
+
+   Note: it may take nearly as much time to find the first solution as to find all of them.
+  "
+  (:require
+    [clojure.test :refer [deftest is]]
+    [clojure.test.check.clojure-test :refer [defspec]]
+    [clojure.test.check.generators :as gen]
+    [clojure.test.check.properties :as prop]))
+
+;;; N-Queens Puzzle
+;;; The puzzle is to arrange n queens on an n × n chessboard so that no queen attacks any other.
+;;; Each queen therefore has to be placed on the board in a different row, column, and diagonal from any other queen.
+
+;;; Model the chessboard using a list of natural number (Nat) for each row.
+;;; Ex: 3x3 chessboard looks like the following:
+;;; 1 2 3
+;;; 1 2 3
+;;; 1 2 3
+;;;
+;;; The position of the queens could be modelled as a permutation of the numbers 1 to `n`.
+;;; Then we can satisfy that each queen would be in a different row and column.
+;;;
+;;; Ex:
+;;; [1 5 8 6 3 7 2 4] is one of the arrangement on 8x8 chessboard.
+;;; The arrangement means the queen in the first row is in column 1, the queen in the second row is in column 5, and so on.
+;;; The arrangement looks like the following on the board:
+;;; *Q* 2   3   4   5   6   7   8
+;;; 1   2   3   4   *Q* 6   7   8
+;;; 1   2   3   4   5   6   7   *Q*
+;;; 1   2   3   4   5   *Q* 7   8
+;;; 1   2   *Q* 4   5   6   7   8
+;;; 1   2   3   4   5   6   *Q* 8
+;;; 1   *Q* 3   4   5   6   7   8
+;;; 1   2   3   *Q* 5   6   7   8
+
+;;;
+;;; Make it right Version
+;;;
+(declare safe)
+(declare perms)
+(defn queens
+  "Nat -> [[Nat]]
+   Returns all the possible positions so that `n` queens don't attack any other.
+
+   Where:
+   - perms :: Nat -> [[Nat]]
+     generate all permutations from 1 to `n`.
+   - safe :: [Nat] -> Boolean
+     check if queens don't attack any other.
+
+   O(n^2 x n!)
+  "
+  [n]
+  (filter safe (perms n)))
+
+(deftest queens-test
+  (is (= [[1]] (queens 1)))
+  (is (= [] (queens 2)))
+  (is (= [] (queens 3)))
+  (is (= [[3 1 4 2] [2 4 1 3]] (queens 4)))
+
+  (is (some #{[1 5 8 6 3 7 2 4]} (queens 8)))
+  (is (= 92 (count (queens 8)))))
+
+(defn inserts
+  "Nat -> [Nat] -> [Nat]
+   Returns all the possible ways `qqs` can be expanded with element `x`.
+
+   Ex: (inserts 1 [2 3]) = [[1 2 3] [2 1 3] [2 3 1]]
+   Because:
+   - 1 can be inserted at the beginning of [2 3], aka [1] ++ [2 3]
+   - 1 can be inserted between 2 and 3, aka [2] ++ [1] ++ [3]
+   - 1 can be inserted at the end of [2 3], aka [2 3] ++ [1]
+  "
+  [x [queen & qs :as qqs]]
+  (if queen
+    (cons (cons x qqs) (map #(cons queen %) (inserts x qs)))
+    (list (list x))))
+
+(deftest inserts-test
+  (is (= [[1 2 3] [2 1 3] [2 3 1]]
+         (inserts 1 [2 3]))))
+
+(defn perms
+  "Nat -> [[Nat]]
+   Returns all permutations from 1 to `n` by taking each permutation of the init of the list
+   and returning all the ways the last element can be inserted.
+
+   O(n x n!)
+  "
+  [n]
+  (reduce (fn [acc x]
+            (mapcat #(inserts x %) acc))
+          (list (list))
+          ;; reverse order shouldn't affect the algorithm, just make printed results look pretty
+          (range n 0 -1)))
+
+(deftest perms-test
+  (is (= [[1 2 3] [2 1 3] [2 3 1] [1 3 2] [3 1 2] [3 2 1]]
+         (perms 3))))
+
+(defn check
+  "[[R Q]] -> Boolean
+   True if queens are not on diagonal of one another.
+  "
+  [[[r q] & rqs]]
+  (if (empty? rqs)
+    true
+    (and (every? (fn [[r' q']]
+                   (not= (Math/abs ^long (- q q'))
+                         (- r' r)))
+                 rqs)
+         (check rqs))))
+
+(deftest check-test
+  ;; *Q* 2   3   4   5   6   7   8
+  ;; 1   2   3   4   *Q* 6   7   8
+  ;; 1   2   3   4   5   6   7   *Q*
+  ;; 1   2   3   4   5   *Q* 7   8
+  ;; 1   2   *Q* 4   5   6   7   8
+  ;; 1   2   3   4   5   6   *Q* 8
+  ;; 1   *Q* 3   4   5   6   7   8
+  ;; 1   2   3   *Q* 5   6   7   8
+  (is (check [[1 1] [2 5] [3 8] [4 6] [5 3] [6 7] [7 2] [8 4]]))
+  ;; *Q* 2
+  ;; 1   *Q*
+  (is (not (check [[1 1] [2 2]])))
+  ;; 1 *Q*
+  ;; *Q* 2
+  (is (not (check [[1 2] [2 1]]))))
+
+(defn safe
+  "Checks if queens don't attack any other.
+
+   O(n^2)
+  "
+  [qs]
+  (check (map vector (range 1 (inc (count qs))) qs)))
+
+(deftest safe-test
+  ;; *Q* 2   3   4   5   6   7   8
+  ;; 1   2   3   4   *Q* 6   7   8
+  ;; 1   2   3   4   5   6   7   *Q*
+  ;; 1   2   3   4   5   *Q* 7   8
+  ;; 1   2   *Q* 4   5   6   7   8
+  ;; 1   2   3   4   5   6   *Q* 8
+  ;; 1   *Q* 3   4   5   6   7   8
+  ;; 1   2   3   *Q* 5   6   7   8
+  (is (safe [1 5 8 6 3 7 2 4]))
+  ;; *Q* 2
+  ;; 1   *Q*
+  (is (not (safe [1 2]))))
