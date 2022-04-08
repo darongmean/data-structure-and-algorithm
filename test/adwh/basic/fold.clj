@@ -17,9 +17,18 @@
 ;;; implement reverse using fold
 (defspec reverse-test
   (prop/for-all [xs gen-xs]
-    (is (= (reverse xs)
-           (reduce (fn [acc x] (conj acc x))
-                   '()
+    ;; "rseq" is faster than "reverse" for vector, sorted-set, and sorted-map
+    ;; In case of vector, it uses "nth" function to iterate elements.
+    ;; "rseq" is O(1), while "reverse" is O(n) for reversible collections: vector, sorted-set, and sorted-map.
+    ;;
+    ;; see https://clojuredocs.org/clojure.core/rseq
+    ;;
+    ;; Note:
+    ;; - "rseq" return nil on empty collection
+    ;; - "reverse" return empty collection on empty collection
+    (is (= (rseq xs)
+           (reduce (fn [acc x] (conj (or acc '()) x))
+                   nil
                    xs)))))
 
 ;;; implement map using fold

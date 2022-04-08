@@ -121,6 +121,7 @@
 (defspec foldl-filter-fusion-test
   (let [f -
         p even?]
+
     (prop/for-all [xs gen-xs]
       (is (= (->> xs (filter p) (reduce f 0))
              (reduce (fn [acc x]
@@ -128,4 +129,5 @@
                          (f acc x)
                          acc))
                      0
-                     xs))))))
+                     xs)))))
+  )
