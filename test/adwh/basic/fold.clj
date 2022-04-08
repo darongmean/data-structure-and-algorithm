@@ -27,6 +27,7 @@
     ;; - "rseq" return nil on empty collection
     ;; - "reverse" return empty collection on empty collection
     (is (= (rseq xs)
+           ;; take advantage of conj that conj put last element to the first position of a list
            (reduce (fn [acc x] (conj (or acc '()) x))
                    nil
                    xs)))))
@@ -63,3 +64,28 @@
                          (reduced acc)))
                      []
                      xs))))))
+
+;;; implement drop-while-end using fold
+(defn drop-while-end
+  "Drops the longest suffix of a list all of whose elements satisfy a given Boolean test.
+
+   Ex: dropWhileEnd even [1,4,3,6,2,4] = [1,4,3]
+   "
+  [pred xs]
+  (->> xs
+       rseq
+       (drop-while pred)
+       reverse))
+
+(defspec drop-while-end-test
+  (let [p even?]
+    (prop/for-all [xs gen-xs]
+      (is (= (drop-while-end p xs)
+             (->> xs
+                  rseq
+                  (reduce (fn [acc x]
+                            (if (and (p x) (empty? acc))
+                              acc
+                              ;; take advantage of conj that conj put last element to the first position of a list
+                              (conj acc x)))
+                          '())))))))
