@@ -64,8 +64,10 @@
 
 (deftest queens-test
   (is (= [[1]] (queens 1)))
+
   (is (= [] (queens 2)))
   (is (= [] (queens 3)))
+
   (is (= [[3 1 4 2] [2 4 1 3]] (queens 4)))
 
   (is (some #{[1 5 8 6 3 7 2 4]} (queens 8)))
@@ -159,3 +161,178 @@
   ;; *Q* 2
   ;; 1   *Q*
   (is (not (safe [1 2]))))
+
+;;;
+;;; Optimize Version
+;;;
+;;; Tip: generate only those permutations that can be extended to safe permutations.
+;;; The idea is to exploit the following property of safe:
+;;; > safe (qs + [q]) = safe qs ∧ newDiag q qs
+;;;   where newDiag q qs = and [abs (q − q')  ̸= r − r' | (r',q') <- zip [1..] qs]
+;;;         where r = length qs + 1
+;;;
+;;; The test newDiag ensures that the next queen is placed on a fresh diagonal.
+;;; However, it is difficult to make use of this property with the above definition of perms
+;;; because new elements are inserted into the middle of previously generated partial permutations.
+(defn range1 []
+  (map inc (range)))
+
+(defn zip [xs ys]
+  (map vector xs ys))
+
+(defn new-diag
+  "True if `q` can be placed in diagonal of previous position `qs`.
+
+   O(n)
+  "
+  [q qs]
+  (let [r (inc (count qs))]
+    (every? (fn [[r' q']]
+              (not= (Math/abs ^long (- q q'))
+                    (- r r')))
+            (zip (range1) qs))))
+
+(deftest new-diag-test
+  (is (new-diag 4 [1 5 8 6 3 7 2]))
+  (is (not (new-diag 2 [1]))))
+
+(defn safe-01
+  "O(n^2) cause `butlast` is O(n)
+  "
+  [qs]
+  (if (empty? qs)
+    true
+    (and (new-diag (last qs) (butlast qs))
+         (safe-01 (butlast qs)))))
+
+(deftest safe1-test
+  (is (= (safe [1 5 8 6 3 7 2 4])
+         (safe-01 [1 5 8 6 3 7 2 4])))
+  (is (= (safe [1 2])
+         (safe-01 [1 2]))))
+
+(defn perms-01
+  "O(n!)
+  "
+  [n]
+  (let [xs (range 1 (inc n))
+        help (fn help [r]
+               (if (zero? r)
+                 (list (list))
+                 (for [qs (help (dec r))
+                       x xs
+                       :when (not (some #{x} qs))]
+                   (concat qs [x]))))]
+    (help n)))
+
+(defn is-coll= [expected actual]
+  (is (= (set expected)
+         (set actual))
+      "Elements are not the same.")
+  (is (= (count expected)
+         (count actual))
+      "Size is not the same."))
+
+(deftest perms-01-test
+  (is-coll= (perms 3) (perms-01 3)))
+
+(defn queens-01
+  "O(n x n!)
+  "
+  [n]
+  ;; O(n^2 x n!)
+  #_(filter safe-01 (perms-01 n))
+
+  ;; replace perms-01 by its definition
+  #_(let [xs (range 1 (inc n))
+          help (fn help [r]
+                 (if (zero? r)
+                   (list (list))
+                   (for [qs (help (dec r))
+                         x xs
+                         :when (not (some #{x} qs))]
+                     (concat qs [x]))))]
+      (filter safe-01 (help n)))
+
+  ;; replace safe-01 by its definition
+  #_(let [xs (range 1 (inc n))
+          help (fn help [r]
+                 (if (zero? r)
+                   (list (list))
+                   (for [qs (help (dec r))
+                         x xs
+                         :when (not (some #{x} qs))]
+                     (concat qs [x]))))]
+      (filter (fn safe-01' [qs]
+                (if (empty? qs)
+                  true
+                  (and (new-diag (last qs) (butlast qs))
+                       (safe-01' (butlast qs)))))
+              (help n)))
+
+  ;; replace new-diag by its definition
+  #_(let [xs (range 1 (inc n))
+          help (fn help [r]
+                 (if (zero? r)
+                   (list (list))
+                   (for [qs (help (dec r))
+                         x xs
+                         :when (not (some #{x} qs))]
+                     (concat qs [x]))))]
+      (filter (fn safe-01' [qs]
+                (if (empty? qs)
+                  true
+                  (and (let [r (inc (count (butlast qs)))]
+                         (every? (fn [[r' q']]
+                                   (not= (Math/abs ^long (- (last qs) q'))
+                                         (- r r')))
+                                 (zip (range1) (butlast qs))))
+                       (safe-01' (butlast qs)))))
+              (help n)))
+
+  ;; fuse filter safe-01
+  ;; The safety of previously placed queens is guaranteed by construction.
+  ;; The test new-diag1 takes only O(n) steps and the resulting search is faster by a factor of n.
+  #_(let [xs (range 1 (inc n))
+          new-diag1 (fn [[r q] qs]
+                      (every? (fn [[r' q']]
+                                (not= (Math/abs ^long (- q q'))
+                                      (- r r')))
+                              (zip (range1) qs)))
+          help (fn help [r]
+                 (if (zero? r)
+                   (list (list))
+                   (for [qs (help (dec r))
+                         x xs
+                         :when (not (some #{x} qs))
+                         :when (new-diag1 [r x] qs)]
+                     (concat qs [x]))))]
+      (help n))
+
+  ;; replace recursive with reduce
+  (let [rows (range 1 (inc n))
+        columns (range 1 (inc n))
+        new-diag1 (fn [[r q] qs]
+                    (every? (fn [[r' q']]
+                              (not= (Math/abs ^long (- q q'))
+                                    (- r r')))
+                            (zip rows qs)))]
+    (reduce (fn [acc r]
+              (for [qs acc
+                    c columns
+                    :when (not-any? #{c} qs)
+                    :when (new-diag1 [r c] qs)]
+                (conj qs c)))
+            [[]]
+            rows)))
+
+(deftest queens-01-test
+  (is-coll= (queens 1) (queens-01 1))
+
+  (is-coll= (queens 2) (queens-01 2))
+  (is-coll= (queens 3) (queens-01 3))
+
+  (is-coll= (queens 4) (queens-01 4))
+
+  (is-coll= (queens 8) (queens-01 8))
+  (is (= (count (queens 8)) (count (queens 8)))))
