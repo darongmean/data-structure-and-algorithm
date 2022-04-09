@@ -290,7 +290,7 @@
                        (safe-01' (butlast qs)))))
               (help n)))
 
-  ;; fuse filter safe-01
+  ;; fuse part of filter safe-01 into the generation of permutations
   ;; The safety of previously placed queens is guaranteed by construction.
   ;; The test new-diag1 takes only O(n) steps and the resulting search is faster by a factor of n.
   #_(let [xs (range 1 (inc n))
@@ -326,13 +326,35 @@
             [[]]
             rows)))
 
-(deftest queens-01-test
-  (is-coll= (queens 1) (queens-01 1))
+(defspec queens-01-test
+  (prop/for-all [n (gen/large-integer* {:min 1 :max 8})]
+    (is-coll= (queens n) (queens-01 n))))
 
-  (is-coll= (queens 2) (queens-01 2))
-  (is-coll= (queens 3) (queens-01 3))
+;;;
+;;; Compare time complexity
+;;;
+;;; Finding all solutions
+;;;         N    8                  9                   10
+;;; queens       51.617791 msecs    330.785625 msecs    3590.472125 msecs
+;;; queens-01    8.172541  msecs    27.987833  msecs    131.711458  msecs
+;;;
+;;; Finding first solution
+;;;         N    8                 9                    10
+;;; queens       1.0315  msecs     8.63225  msecs       16.168334 msecs
+;;; queens-01    0.31525 msecs     0.157208 msecs       0.383083  msecs
+(comment
+  (println)
+  (println "Compare time complexity of finding all solutions:")
+  (println)
+  (doseq [n [8 9 10]]
+    (println "queens " n " : " (time (count (queens n))))
+    (println "queens-01 " n " : " (time (count (queens-01 n))))
+    (println))
 
-  (is-coll= (queens 4) (queens-01 4))
-
-  (is-coll= (queens 8) (queens-01 8))
-  (is (= (count (queens 8)) (count (queens 8)))))
+  (println)
+  (println "Compare time complexity of finding first solutions:")
+  (println)
+  (doseq [n [8 9 10]]
+    (println "queens " n " : " (time (first (queens n))))
+    (println "queens-01 " n " : " (time (first (queens-01 n))))
+    (println)))
