@@ -8,7 +8,16 @@
    To find just one – assuming of course that one exists – we can use the idiom
    > solution = head · solutions
 
-   Note: it may take nearly as much time to find the first solution as to find all of them.
+   Note:
+   - it may take nearly as much time to find the first solution as to find all of them.
+   - the choices for the next move (left or right, etc...) are made can significantly influence the running time for finding the first solution.
+
+   Difference between the book version and this implementation:
+   - the book claims queens-02 runs faster when finding all solutions, and queen-01 runs faster when finding the first solutions.
+   - because queen-02 needs more work done to generate the first solution and less work to generate next solutions
+   - this might be true in Haskell based on how list generation and lazy evaluation
+   - current implementation in Clojure shows that queens-02 runs faster in both situation
+   - because Clojure is strict evaluation
   "
   (:require
     [clojure.test :refer [deftest is]]
@@ -334,7 +343,10 @@
 ;;; Optimize Solution 2
 ;;; There is a dual solution in which the order of the generators is swapped and
 ;;; new elements are added to the front of a previous permutation rather than to the rear.
-(defn queens-02 [n]
+(defn queens-02
+  "O(n x n!)
+  "
+  [n]
   (let [rows (range 1 (inc n))
         columns (range 1 (inc n))
         new-diag2 (fn [q qs]
