@@ -331,6 +331,31 @@
     (is-coll= (queens n) (queens-01 n))))
 
 ;;;
+;;; Optimize Solution 2
+;;; There is a dual solution in which the order of the generators is swapped and
+;;; new elements are added to the front of a previous permutation rather than to the rear.
+(defn queens-02 [n]
+  (let [rows (range 1 (inc n))
+        columns (range 1 (inc n))
+        new-diag2 (fn [q qs]
+                    (every? (fn [[r' q']]
+                              (not= (Math/abs ^long (- q q'))
+                                    (- r' 1)))
+                            (zip (range 2 (inc n)) qs)))]
+    (reduce (fn [acc r]
+              (for [qs acc
+                    c columns
+                    :when (not-any? #{c} qs)
+                    :when (new-diag2 c qs)]
+                (cons c qs)))
+            [[]]
+            rows)))
+
+(defspec queens-02-test
+  (prop/for-all [n (gen/large-integer* {:min 1 :max 8})]
+    (is-coll= (queens n) (queens-02 n))))
+
+;;;
 ;;; Compare time complexity
 ;;;
 ;;; Finding all solutions
@@ -342,13 +367,14 @@
 ;;;         N    8                 9                    10
 ;;; queens       1.0315  msecs     8.63225  msecs       16.168334 msecs
 ;;; queens-01    0.31525 msecs     0.157208 msecs       0.383083  msecs
-(comment
+(do
   (println)
   (println "Compare time complexity of finding all solutions:")
   (println)
   (doseq [n [8 9 10]]
     (println "queens " n " : " (time (count (queens n))))
     (println "queens-01 " n " : " (time (count (queens-01 n))))
+    (println "queens-02 " n " : " (time (count (queens-02 n))))
     (println))
 
   (println)
@@ -357,4 +383,5 @@
   (doseq [n [8 9 10]]
     (println "queens " n " : " (time (first (queens n))))
     (println "queens-01 " n " : " (time (first (queens-01 n))))
+    (println "queens-02 " n " : " (time (first (queens-02 n))))
     (println)))
