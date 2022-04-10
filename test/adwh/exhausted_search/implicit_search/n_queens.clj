@@ -360,14 +360,16 @@
 ;;;
 ;;; Finding all solutions
 ;;;         N    8                  9                   10
-;;; queens       51.617791 msecs    330.785625 msecs    3590.472125 msecs
-;;; queens-01    8.172541  msecs    27.987833  msecs    131.711458  msecs
+;;; queens       54.316958 msecs    335.767208 msecs    3588.619542 msecs
+;;; queens-01    8.243375  msecs    30.160917  msecs    130.793459  msecs
+;;; queens-02    7.344083  msecs    25.420667  msecs    106.836875  msecs
 ;;;
 ;;; Finding first solution
-;;;         N    8                 9                    10
-;;; queens       1.0315  msecs     8.63225  msecs       16.168334 msecs
-;;; queens-01    0.31525 msecs     0.157208 msecs       0.383083  msecs
-(do
+;;;         N    8                  9                   10
+;;; queens       1.044167  msecs    8.400625   msecs    14.244209   msecs
+;;; queens-01    0.317667  msecs    0.183666   msecs    0.394375    msecs
+;;; queens-02    0.261584  msecs    0.130541   msecs    0.321417    msecs
+(comment
   (println)
   (println "Compare time complexity of finding all solutions:")
   (println)
