@@ -64,11 +64,15 @@
         succs (fn [state]
                 (for [move (moves state)]
                   (move_ state move)))
-        search (fn search [[state & remaining-states :as all]]
-                 (cond
-                   (empty? all) []
-                   (solved state) (cons state (search remaining-states))
-                   :else (search (concat (succs state) remaining-states))))]
+        search (fn [states]
+                 (loop [[state & remaining-states :as all] states
+                        result []]
+                   (cond
+                     (empty? all) result
+                     (solved state) (recur remaining-states
+                                           (cons state result))
+                     :else (recur (concat (succs state) remaining-states)
+                                  result))))]
     (search [[]])))
 
 (defspec solutions-test
