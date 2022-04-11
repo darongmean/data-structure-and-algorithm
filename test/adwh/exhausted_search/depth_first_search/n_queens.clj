@@ -79,3 +79,32 @@
   (prop/for-all [n (gen/large-integer* {:min 1 :max 9})]
     (implicit-search/is-coll= (implicit-search/queens-02 n)
                               (solutions n))))
+
+;;;
+;;; Compare time complexity
+;;;
+;;; Finding all solutions
+;;;         N    8                  9                   10
+;;; queens       10.736042 msecs    30.335958 msecs     118.798458 msecs
+;;; solutions    14.4635  msecs     29.317334 msecs     134.776209 msecs
+;;;
+;;; Finding first solution
+;;;         N    8                  9                   10
+;;; queens       0.294542  msecs    0.126084   msecs    0.365541   msecs
+;;; solutions    5.524125  msecs    26.402333  msecs    126.601125 msecs
+(comment
+  (println)
+  (println "Compare time complexity of finding all solutions:")
+  (println)
+  (doseq [n [8 9 10]]
+    (println "queens " n " : " (time (count (implicit-search/queens-02 n))))
+    (println "dfs " n " : " (time (count (solutions n))))
+    (println))
+
+  (println)
+  (println "Compare time complexity of finding first solutions:")
+  (println)
+  (doseq [n [8 9 10]]
+    (println "queens " n " : " (time (first (implicit-search/queens-02 n))))
+    (println "dfs " n " : " (time (first (solutions n))))
+    (println)))
