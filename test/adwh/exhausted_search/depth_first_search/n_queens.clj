@@ -1,4 +1,33 @@
 (ns adwh.exhausted-search.depth-first-search.n-queens
+  "A search strategy that is made explicit.
+
+   The general idea is to reformulate the search in terms of two finite sets, a set of states and a set of moves,
+   and 3 functions
+   > ;; Returns all possible moves that can be made in a given state.
+   > moves :: State -> [Move]
+   > ;; Returns the state that results when a given move is made.
+   > move :: State -> Move -> State
+   > ;; True if the state is a solution to the puzzle.
+   > solved :: State -> Bool
+
+   Depth first search algorithm:
+   > solutions :: State -> [State]
+   > solutions t = search [t]
+   >
+   > search :: [State] -> [State]
+   > search [] = []
+   > search (t:ts) = if solved t
+                     then t:(search ts)
+                     else search(succs t ++ ts)
+   >
+   > succs :: State -> [State]
+   > succs t = [move t m | m <- moves t]
+
+   3 assumptions to make it work:
+   1. The underlying graph is acyclic, otherwise search would loop indefinitely if any state repeated.
+   2. No further moves are possible in any solved state, otherwise some solved states would be missed.
+   3. No state can be reached by more than one path, otherwise some solved states would be listed more than once.
+  "
   (:require
     [adwh.exhausted-search.implicit-search.n-queens :as implicit-search]
     [clojure.test :refer [deftest is]]
