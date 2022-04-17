@@ -178,3 +178,86 @@
 
 (defn good [n v]
   (= n v))
+
+;;;
+;;; Optimize solution
+;;; - One obvious step is to memoise value computations to save recomputing values from scratch each time.
+;;; - Better still, we can exploit a monotonicity condition to achieve a partial fusion of the filter test into the generation of expressions.
+;;; So we can pair expressions with their values and only generate expressions whose values are at most the target value.
+;;; The value of an expression whose component values are (p,f,t,e) is `f × t + e`.
+(declare expressions-01)
+(declare good-01)
+
+(defn solutions-01 [n digits]
+  (->> digits
+       (expressions-01 n)
+       (filter #(good-01 n %))
+       (map first)))
+
+(deftest solutions-01-test
+  (let [actual (solutions-01 100 (range 9 0 -1))]
+    (is (;; 12+34+5×6+7+8+9 = 100
+          some #{[[[1 2]] [[3 4]] [[5] [6]] [[7]] [[8]] [[9]]]}
+               actual))
+    (is (= 7 (count actual)))))
+
+(defn extend [[expr {:keys [p val-factor val-term val-expr]} :as _expr-pair] digit]
+  {:pre [(expr? expr) (digit? digit)]}
+  (if (empty? expr)
+    [[(expr<-digit digit)
+      {:p 10 :val-factor digit :val-term 1 :val-expr 0}]]
+    [;; Ex: 2*3+... can be extended on the left with a new digit 1 in one of the following three ways:
+     ;; 1/ 12*3+···
+     [(prepend-expr-by-factor digit expr)
+      {:p (* 10 p) :val-factor (+ (* p digit) val-factor) :val-term val-term :val-expr val-expr}]
+     ;; 2/ 1*2*3+···
+     [(prepend-expr-by-* digit expr)
+      {:p 10 :val-factor digit :val-term (* val-factor val-term) :val-expr val-expr}]
+     ;; 3/ 1+2*3+···
+     [(prepend-expr-by-+ digit expr)
+      {:p 10 :val-factor digit :val-term 1 :val-expr (+ (* val-factor val-term) val-expr)}]]))
+
+(deftest extend-test
+  (is (= [;; 3 expr
+          [[[[3]]] {:p 10, :val-factor 3, :val-term 1, :val-expr 0}]]
+         (extend [] 3)))
+  (is (= [;; 23 expr
+          [[[[2 3]]]
+           {:p 100, :val-factor 23, :val-term 1, :val-expr 0}]
+          ;; 2*3 expr
+          [[[[2] [3]]]
+           {:p 10, :val-factor 2, :val-term 3, :val-expr 0}]
+          ;; 2+3 expr
+          [[[[2]] [[3]]]
+           {:p 10, :val-factor 2, :val-term 1, :val-expr 3}]]
+         (extend [;; 3 expr
+                  [[[3]]] {:p 10, :val-factor 3, :val-term 1, :val-expr 0}]
+                 2)))
+  (is (= [;; 123 expr
+          [[[[1 2 3]]]
+           {:p 1000, :val-factor 123, :val-term 1, :val-expr 0}]
+          ;; 1*23 expr
+          [[[[1] [2 3]]]
+           {:p 10, :val-factor 1, :val-term 23, :val-expr 0}]
+          ;; 1+23 expr
+          [[[[1]] [[2 3]]]
+           {:p 10, :val-factor 1, :val-term 1, :val-expr 23}]]
+         (extend [;; 23 expr
+                  [[[2 3]]] {:p 100, :val-factor 23, :val-term 1, :val-expr 0}]
+                 1))))
+
+(defn value-01 [[_expr {:keys [val-factor val-term val-expr]}]]
+  (+ (* val-factor val-term) val-expr))
+
+(defn ok [n expr-pair]
+  (<= (value-01 expr-pair) n))
+
+(defn good-01 [n expr-pair]
+  (= (value-01 expr-pair) n))
+
+(defn expressions-01 [n digits]
+  (let [glue (fn [expr-pair digit]
+               (filter #(ok n %) (extend expr-pair digit)))]
+    (reduce (fn [expr-pairs digit] (mapcat #(glue % digit) expr-pairs))
+            [[[] {}]]
+            digits)))
