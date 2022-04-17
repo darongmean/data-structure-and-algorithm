@@ -3,6 +3,11 @@
 
    The following idiom will be used frequently:
    > foldr (concatMap . steps) e
+   aka
+   > (reduce (fn [acc x]
+   >          (mapcat #(steps % x) acc))
+   >         e
+   >         xs)
 
    Greedy and thinning algorithms are usually inductive."
   (:require
