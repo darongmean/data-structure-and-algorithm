@@ -261,3 +261,26 @@
     (reduce (fn [expr-pairs digit] (mapcat #(glue % digit) expr-pairs))
             [[[] {}]]
             digits)))
+
+;;;
+;;; Compare time complexity
+;;;
+;;; Finding all solutions
+;;; solutions       75.872    msecs
+;;; solutions-01    2.162458  msecs
+;;;
+;;; Finding first solution
+;;; solutions       37.155708 msecs
+;;; solutions-01    0.638875  msecs
+(comment
+  (println)
+  (println "Compare time complexity of finding all solutions:")
+  (println)
+  (println "ways of sum 100 : " (time (count (solutions 100 (range 9 0 -1)))))
+  (println "optimized ways of sum 100 : " (time (count (solutions-01 100 (range 9 0 -1)))))
+
+  (println)
+  (println "Compare time complexity of finding first solutions:")
+  (println)
+  (println "ways of sum 100 : " (time (first (solutions 100 (range 9 0 -1)))))
+  (println "optimized ways of sum 100 : " (time (first (solutions-01 100 (range 9 0 -1))))))
