@@ -1,4 +1,38 @@
 (ns adwh.exhausted-search.breadth-first-search.lunar-landing-puzzle
+  "
+   The general idea is to reformulate the search in terms of two finite sets, a set of states and a set of moves,
+   and 3 functions:
+   > ;; Returns all possible moves that can be made in a given state.
+   > moves :: State -> [Move]
+   > ;; Returns the state that results when a given move is made.
+   > move :: State -> Move -> State
+   > ;; True if the state is a solution to the puzzle.
+   > solved :: State -> Bool
+
+   Breadth first search algorithm:
+   > type Path = ([Move],[State])
+   >
+   > succs::Path -> [Path]
+   > {- `notElem t' ts` makes sure no intermediate state is repeated during the moves -}
+   > succs (ms, t:ts) = [(ms + [m], t':t:ts) | m <- moves t,let t' = move t m, notElem t' ts]
+   >
+   > start :: State -> [ Path ]
+   > start t = [([ ], [ t ])]
+   >
+   > solutions :: State > [[Move]]
+   > solutions = search · start
+   >   where search [] =[]
+             search ((ms, t : ts) : ps)
+               | solved t = ms : search ps
+               | otherwise = search (ps + succs (ms, t : ts))
+
+   The frontier – the list of paths waiting to be explored further – is maintained as a queue,
+   with new entries added to the rear of the queue.
+
+   Assumptions:
+   - move t m != t for all states t and moves m, so the graph does not contain loops.
+   - no moves are possible in solved states.
+  "
   (:require
     [clojure.test :refer [deftest is]])
   (:import (clojure.lang PersistentQueue)))
