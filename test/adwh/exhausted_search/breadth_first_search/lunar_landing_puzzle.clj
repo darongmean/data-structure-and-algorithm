@@ -10,6 +10,11 @@
    > solved :: State -> Bool
 
    Breadth first search algorithm:
+   > {- A sequence of moves is simple if no intermediate state is repeated during the moves.
+   >    To maintain the restriction, we need to remember both the sequence of moves in a path and the list of intermediate states,
+   >    including the initial state, that arises as a result of making the moves.
+   >    Hence we define Path:
+   > -}
    > type Path = ([Move],[State])
    >
    > succs::Path -> [Path]
@@ -77,7 +82,7 @@
 ;;; - The escape hatch is cell 15.
 ;;; A board is a list of occupied cells with the first cell, at position 0, naming the location of the astronaut.
 ;;; For example, the board above is represented by the list [26 3 11 13 22 25].
-(def sample-board
+(def example-board
   {:board [26 3 11 13 22 25]})
 
 ;; moves :: State -> [Move]
@@ -89,49 +94,46 @@
 ;; solutions :: State -> [[Move]]
 (declare solutions)
 
-;; Path = {:path-moves [] :path-states []}
-(defn succs
-  "Path -> [Path]
-  "
-  [{:keys [path-moves path-states]}]
-  (let [[t & ts] path-states]
-    (for [m (moves t)
-          :let [t' (move t m)]
-          :when (;; make sure it's a simple sequence of move
-                  ;; aka no intermediate state is repeated during the moves
-                  ;; Without this restriction the set of solutions could be infinite.
-                  not-any? #{t'} ts)]
-      {:path-moves  (cons m path-moves)
-       :path-states (cons t' path-states)})))
+;; path = simple-moves, state, intermediate-states
+(defn start [state]
+  [{:state               state
+    :simple-moves        []
+    :intermediate-states #{}}])
 
-(defn start
-  "State -> [Path]
-  "
-  [state]
-  [{:path-moves nil :path-states (list state)}])
+(defn solved-path [{:keys [state] :as _path}]
+  (solved state))
 
-(defn queue [coll]
-  (reduce conj (PersistentQueue/EMPTY) coll))
-
-(defn enqueue-all [queue coll]
-  {:pre [(= PersistentQueue (type queue))]}
-  (reduce conj queue coll))
-
-(def dequeue pop)
+(defn succs [{:keys [state intermediate-states simple-moves] :as _path}]
+  {:pre [;; make sure first move is in the head of the list
+         (vector? simple-moves)
+         ;; improve performance of membership test
+         (set? intermediate-states)]}
+  (for [m (moves state)
+        :let [s (move state m)]
+        :when (
+                ;; make sure it's a simple sequence of move
+                ;; aka no intermediate state is repeated during the moves
+                ;; Without this restriction the set of solutions could be infinite.
+                not (intermediate-states s))]
+    {:state               s
+     :simple-moves        (conj simple-moves m)
+     :intermediate-states (conj intermediate-states s)}))
 
 (defn search [paths]
-  (let [solved' (fn [{:keys [path-states]}]
-                  (solved (first path-states)))
-        cons-moves (fn [{:keys [path-moves]} result]
-                     (cons path-moves result))]
+  (let [queue (fn [coll]
+                (reduce conj (PersistentQueue/EMPTY) coll))
+        enqueue-all (fn [queue coll]
+                      {:pre [(= PersistentQueue (type queue))]}
+                      (reduce conj queue coll))
+        dequeue pop]
     (loop [q (queue paths)
-           result (list)]
+           result []]
       (cond
         (empty? q) result
 
-        (solved' (peek q))
+        (solved-path (peek q))
         (recur (dequeue q)
-               (cons-moves (peek q) result))
+               (conj result (:simple-moves (peek q))))
 
         :else
         (recur (enqueue-all (dequeue q)
@@ -141,16 +143,18 @@
 (deftest search-test
   (is (= []
          (search [])))
-  (is (= [[{:move-piece-name   0
-            :move-current-cell 7
-            :move-to-cell      9}]]
-         (search [{:path-moves  [{:move-piece-name   0
-                                  :move-current-cell 7
-                                  :move-to-cell      9}]
-                   :path-states [{:board [15 3 11 13 22 25]}]}])))
+  (is (= [[{:move-piece     0
+            :move-from-cell 7
+            :move-to-cell   9}]]
+         (search [{:state               {:board [15 3 11 13 22 25]}
+                   :simple-moves        [{:move-piece     0
+                                          :move-from-cell 7
+                                          :move-to-cell   9}]
+                   :intermediate-states #{}}])))
   (is (= 25
-         (count (search [{:path-moves  []
-                          :path-states [sample-board]}])))))
+         (count (search [{:state               example-board
+                          :simple-moves        []
+                          :intermediate-states #{}}])))))
 
 (defn solutions
   "State -> [[Move]]
@@ -165,47 +169,42 @@
 ;;; How to represent moves?
 ;;; Rather than take a move to be a named piece and a direction,
 ;;; we will represent a move by a named piece, its current position, and the finishing point of the move
-(defn show-move [{:keys [move-piece-name move-current-cell move-to-cell]}]
+(defn show-move [{:keys [move-piece move-from-cell move-to-cell]}]
   (let [direction (cond
-                    (and (<= 6 (Math/abs ^long (- move-current-cell move-to-cell)))
-                         (< move-current-cell move-to-cell))
+                    (and (<= 6 (Math/abs ^long (- move-from-cell move-to-cell)))
+                         (< move-from-cell move-to-cell))
                     "D"
-                    (and (<= 6 (Math/abs ^long (- move-current-cell move-to-cell)))
-                         (< move-to-cell move-current-cell))
+                    (and (<= 6 (Math/abs ^long (- move-from-cell move-to-cell)))
+                         (< move-to-cell move-from-cell))
                     "U"
-                    (< move-current-cell move-to-cell)
+                    (< move-from-cell move-to-cell)
                     "R"
                     :else "L")]
-    (str move-piece-name direction)))
+    (str move-piece direction)))
 
 (deftest show-move-test
   (is (= "0R"
-         (show-move {:move-piece-name   0
-                     :move-current-cell 7
-                     :move-to-cell      9})))
+         (show-move {:move-piece     0
+                     :move-from-cell 7
+                     :move-to-cell   9})))
   (is (= "0L"
-         (show-move {:move-piece-name   0
-                     :move-current-cell 9
-                     :move-to-cell      7})))
+         (show-move {:move-piece     0
+                     :move-from-cell 9
+                     :move-to-cell   7})))
   (is (= "0U"
-         (show-move {:move-piece-name   0
-                     :move-current-cell 7
-                     :move-to-cell      1})))
+         (show-move {:move-piece     0
+                     :move-from-cell 7
+                     :move-to-cell   1})))
   (is (= "0D"
-         (show-move {:move-piece-name   0
-                     :move-current-cell 1
-                     :move-to-cell      7}))))
+         (show-move {:move-piece     0
+                     :move-from-cell 1
+                     :move-to-cell   7}))))
 
-;;; Solutions
 (defn safe-landings [board]
-  (map #(map show-move
-             ;; reverse because we are accumulating moves in reverse order
-             ;; aka the last move is in the head of the list
-             (reverse %))
-       (solutions board)))
+  (map #(map show-move %) (solutions board)))
 
 (deftest safe-landings-test
-  (let [actual-moves (safe-landings sample-board)]
+  (let [actual-moves (safe-landings example-board)]
     (is (= 25 (count actual-moves)))
     (is (some #{["5U" "5R" "5U" "2L" "2D" "2L" "0U" "0R" "0U"]} actual-moves))
     (is (some #{["5U" "5R" "5U" "5R" "5D" "5L" "0U" "0R" "0U" "0R" "0D" "0L"]} actual-moves))))
@@ -219,6 +218,8 @@
         lefts #(range (- % 1) (- % (mod % 6)) -1)
         rights #(range (+ % 1) (+ % (- 6 (mod % 6))))
         try' (fn [cells]
+               ;; Each of the various directions is examined in turn to see if there is a blocking piece along the path.
+               ;; If there is, the cell adjacent to the blocker is a possible target for a move.
                (let [[xs ys] (span #(not-any? #{%} board) cells)]
                  (cond
                    (empty? ys) []
@@ -228,20 +229,21 @@
 
 (deftest targets-test
   (is (= [7 2]
-         (targets sample-board 1))))
+         (targets example-board 1))))
 
 (defn moves [{:keys [board]}]
-  (for [[n s] (map vector (range) board)
-        f (targets {:board board} s)]
-    {:move-piece-name   n
-     :move-current-cell s
-     :move-to-cell      f}))
+  (for [[piece from] (map vector (range) board)
+        to (targets {:board board} from)]
+    {:move-piece     piece
+     :move-from-cell from
+     :move-to-cell   to}))
 
 (deftest moves-test
-  (is (= [{:move-piece-name 3 :move-current-cell 13 :move-to-cell 19}
-          {:move-piece-name 5 :move-current-cell 25 :move-to-cell 19}]
-         (moves sample-board))))
+  (is (= [{:move-piece 3 :move-from-cell 13 :move-to-cell 19}
+          {:move-piece 5 :move-from-cell 25 :move-to-cell 19}]
+         (moves example-board))))
 
-(defn move [{:keys [board]} {:keys [move-piece-name move-to-cell]}]
-  (let [[b1 [_ & b2]] (split-at move-piece-name board)]
-    {:board (concat b1 [move-to-cell] b2)}))
+(defn move [{:keys [board]} {:keys [move-piece move-to-cell]}]
+  {:pre [;; make sure fast update by index
+         (vector? board)]}
+  {:board (assoc board move-piece move-to-cell)})
