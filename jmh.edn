@@ -1,0 +1,18 @@
+;; jmh-samples project at https://github.com/openjdk/jmh.
+
+{:benchmarks [{:ns   adwh.basic.accumulating-and-tupling
+               :fn   [steep steep-02]
+               :args [:nat-steep]}]
+ :states     {:nat-steep {:fn (constantly [4 2 1])}}
+ :params     {}
+ :options    {:jmh/default {:mode               :average
+                            :threads            10
+                            :ops-per-invocation 10
+                            :output-time-unit   :us
+                            :timeout            [10 :seconds]
+                            :fork               {:count   1
+                                                 :warmups 0}
+                            :measurement        {:count      10
+                                                 :iterations 10
+                                                 :time       [10 :ms]}
+                            :warmup             {:time [10 :ms]}}}}
