@@ -11,3 +11,7 @@
          (reductions +)
          (vec)
          (rseq))))
+
+(defn gen-lunar-landing-puzzle-board []
+  (let [nat (gen/elements (->> (range 1 30) (remove #{6 12 18 24})))]
+    (vec (gen/sample nat 6))))
