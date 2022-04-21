@@ -13,10 +13,10 @@
    - the choices for the next move (left or right, etc...) are made can significantly influence the running time for finding the first solution.
 
    Difference between the book version and this implementation:
-   - the book claims queens-02 runs faster when finding all solutions, and queen-01 runs faster when finding the first solutions.
+   - the book claims queens-fuse-new-elem-front runs faster when finding all solutions, and queen-01 runs faster when finding the first solutions.
    - because queen-02 needs more work done to generate the first solution and less work to generate next solutions
    - this might be true in Haskell based on how list generation and lazy evaluation
-   - current implementation in Clojure shows that queens-02 runs faster in both situation
+   - current implementation in Clojure shows that queens-fuse-new-elem-front runs faster in both situation
    - because Clojure is strict evaluation
   "
   (:require
@@ -245,7 +245,7 @@
 (deftest perms-01-test
   (is-coll= (perms 3) (perms-01 3)))
 
-(defn queens-01
+(defn queens-fuse-new-elem-end
   "O(n x n!)
   "
   [n]
@@ -335,15 +335,15 @@
             [[]]
             rows)))
 
-(defspec queens-01-test
+(defspec queens-fuse-new-elem-end-test
   (prop/for-all [n (gen/large-integer* {:min 1 :max 8})]
-    (is-coll= (queens n) (queens-01 n))))
+    (is-coll= (queens n) (queens-fuse-new-elem-end n))))
 
 ;;;
 ;;; Optimize Solution 2
 ;;; There is a dual solution in which the order of the generators is swapped and
 ;;; new elements are added to the front of a previous permutation rather than to the rear.
-(defn queens-02
+(defn queens-fuse-new-elem-front
   "O(n x n!)
   "
   [n]
@@ -363,39 +363,25 @@
             [[]]
             rows)))
 
-(defspec queens-02-test
+(defspec queens-fuse-new-elem-front-test
   (prop/for-all [n (gen/large-integer* {:min 1 :max 8})]
-    (is-coll= (queens n) (queens-02 n))))
+    (is-coll= (queens n) (queens-fuse-new-elem-front n))))
 
-;;;
-;;; Compare time complexity
-;;;
-;;; Finding all solutions
-;;;         N    8                  9                   10
-;;; queens       54.316958 msecs    335.767208 msecs    3588.619542 msecs
-;;; queens-01    8.243375  msecs    30.160917  msecs    130.793459  msecs
-;;; queens-02    7.344083  msecs    25.420667  msecs    106.836875  msecs
-;;;
-;;; Finding first solution
-;;;         N    8                  9                   10
-;;; queens       1.044167  msecs    8.400625   msecs    14.244209   msecs
-;;; queens-01    0.317667  msecs    0.183666   msecs    0.394375    msecs
-;;; queens-02    0.261584  msecs    0.130541   msecs    0.321417    msecs
-(comment
-  (println)
-  (println "Compare time complexity of finding all solutions:")
-  (println)
-  (doseq [n [8 9 10]]
-    (println "queens " n " : " (time (count (queens n))))
-    (println "queens-01 " n " : " (time (count (queens-01 n))))
-    (println "queens-02 " n " : " (time (count (queens-02 n))))
-    (println))
+;; Benchmarks
+(defn queens-all [n]
+  (count (queens n)))
 
-  (println)
-  (println "Compare time complexity of finding first solutions:")
-  (println)
-  (doseq [n [8 9 10]]
-    (println "queens " n " : " (time (first (queens n))))
-    (println "queens-01 " n " : " (time (first (queens-01 n))))
-    (println "queens-02 " n " : " (time (first (queens-02 n))))
-    (println)))
+(defn queens-fuse-new-elem-end-all [n]
+  (count (queens-fuse-new-elem-end n)))
+
+(defn queens-fuse-new-elem-front-all [n]
+  (count (queens-fuse-new-elem-front n)))
+
+(defn queens-first [n]
+  (first (queens n)))
+
+(defn queens-fuse-new-elem-end-first [n]
+  (first (queens-fuse-new-elem-end n)))
+
+(defn queens-fuse-new-elem-front-first [n]
+  (first (queens-fuse-new-elem-front n)))

@@ -2,14 +2,28 @@
 
 {:benchmarks [{:ns   adwh.basic.accumulating-and-tupling
                :fn   [steep steep-tupling]
-               :args [:state/nat-steep]}]
+               :args [:state/nat-steep]}
+              {:ns   adwh.exhausted-search.implicit-search.n-queens
+               :fn   [queens-all
+                      queens-fuse-new-elem-end-all
+                      queens-fuse-new-elem-front-all
+                      queens-first
+                      queens-fuse-new-elem-end-first
+                      queens-fuse-new-elem-front-first]
+               :args [:param/small-n]}
+              {:ns   adwh.exhausted-search.depth-first-search.n-queens
+               :fn   [queens-all
+                      queens-bits-all
+                      queens-first]
+               :args [:param/small-n]}]
  :states     {:nat-steep {:fn   adwh.benchmark/gen-nat-steep
-                          :args [:param/count]}}
- :params     {:count [10 20 40 80]}
+                          :args [:param/large-n]}}
+ :params     {:large-n [10 20 40 80]
+              :small-n [1 2 4 8]}
  :options    {:jmh/default {:mode               :average
                             :threads            10
                             :ops-per-invocation 10
-                            :output-time-unit   :us
+                            :output-time-unit   :ms
                             :timeout            [10 :seconds]
                             :fork               {:count   1
                                                  :warmups 0}

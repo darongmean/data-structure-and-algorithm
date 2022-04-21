@@ -106,7 +106,7 @@
 
 (defspec solutions-test
   (prop/for-all [n (gen/large-integer* {:min 1 :max 9})]
-    (implicit-search/is-coll= (implicit-search/queens-02 n)
+    (implicit-search/is-coll= (implicit-search/queens-fuse-new-elem-front n)
                               (solutions n))))
 
 ;;;
@@ -190,7 +190,7 @@
 
 (defspec cqueens-test
   (prop/for-all [n (gen/large-integer* {:min 1 :max 9})]
-    (is (= (count (implicit-search/queens-02 n))
+    (is (= (count (implicit-search/queens-fuse-new-elem-front n))
            (cqueens n)))))
 
 ;;;
@@ -211,7 +211,7 @@
   (println "Compare time complexity of finding all solutions:")
   (println)
   (doseq [n [8 9 10]]
-    (println "queens " n " : " (time (count (implicit-search/queens-02 n))))
+    (println "queens " n " : " (time (count (implicit-search/queens-fuse-new-elem-front n))))
     (println "dfs " n " : " (time (count (solutions n))))
     (println "dfs bit vector" n " : " (time (cqueens n)))
     (println))
@@ -220,6 +220,16 @@
   (println "Compare time complexity of finding first solutions:")
   (println)
   (doseq [n [8 9 10]]
-    (println "queens " n " : " (time (first (implicit-search/queens-02 n))))
+    (println "queens " n " : " (time (first (implicit-search/queens-fuse-new-elem-front n))))
     (println "dfs " n " : " (time (first (solutions n))))
     (println)))
+
+;; Benchmarks
+(defn queens-all [n]
+  (count (solutions n)))
+
+(defn queens-first [n]
+  (first (solutions n)))
+
+(defn queens-bits-all [n]
+  (cqueens n))
