@@ -15,7 +15,13 @@
                :fn   [queens-all
                       queens-bits-all
                       queens-first]
-               :args [:param/small-n]}]
+               :args [:param/small-n]}
+              {:ns   adwh.exhausted-search.implicit-search.expressions-with-a-given-sum
+               :fn   [solutions-all
+                      solutions-fuse-all
+                      solutions-first
+                      solutions-fuse-first]
+               :args [:param/large-n]}]
  :states     {:nat-steep {:fn   adwh.benchmark/gen-nat-steep
                           :args [:param/large-n]}}
  :params     {:large-n [10 20 40 80]

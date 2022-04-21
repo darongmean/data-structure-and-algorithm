@@ -6,6 +6,7 @@
         `value` delivers the value of such an expression, and
         `good` tests whether the value is equal to a given target value.
   "
+  (:refer-clojure :exclude [extend])
   (:require
     [clojure.test :refer [deftest is]]))
 
@@ -284,3 +285,16 @@
   (println)
   (println "ways of sum 100 : " (time (first (solutions 100 (range 9 0 -1)))))
   (println "optimized ways of sum 100 : " (time (first (solutions-01 100 (range 9 0 -1))))))
+
+;;; Benchmarks
+(defn solutions-all [target]
+  (count (solutions target (range 9 0 -1))))
+
+(defn solutions-first [target]
+  (first (solutions target (range 9 0 -1))))
+
+(defn solutions-fuse-all [target]
+  (count (solutions-01 target (range 9 0 -1))))
+
+(defn solutions-fuse-first [target]
+  (first (solutions-01 target (range 9 0 -1))))
