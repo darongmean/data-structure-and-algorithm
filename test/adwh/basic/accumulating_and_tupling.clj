@@ -48,7 +48,7 @@
     [(+ sum x) (and (< sum x) steep?)]
     [0 true]))
 
-(defn steep-02
+(defn steep-tupling
   "O(n)"
   [xs]
   (-> xs
@@ -57,8 +57,8 @@
 
 (defspec fast-steep-false-test
   (prop/for-all [v (gen/return [3 2 1])]
-    (is (not (steep-02 v)))))
+    (is (not (steep-tupling v)))))
 
 (defspec fast-steep-true-test
   (prop/for-all [v (gen/return [4 2 1])]
-    (is (steep-02 v))))
+    (is (steep-tupling v))))
