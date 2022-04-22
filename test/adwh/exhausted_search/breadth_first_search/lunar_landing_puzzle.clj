@@ -34,9 +34,26 @@
    The frontier – the list of paths waiting to be explored further – is maintained as a queue,
    with new entries added to the rear of the queue.
 
+   To find only the first solutions:
+   > import Data.Set (empty, insert, member)
+   >
+   > solution :: State -> Maybe [ Move ]
+   > solution t = search empty [([],t)]
+     where search ts [ ] = Nothing
+           search ts ((ms, t) : ps)
+             | solved t = Just ms
+             | member t ts = search ts ps
+             | otherwise = search (insert t ts) (ps + succs (ms, t))
+
    Assumptions:
    - move t m != t for all states t and moves m, so the graph does not contain loops.
    - no moves are possible in solved states.
+
+   Note:
+   - in find first solution version, intermediate states are maintained in the search loop
+   - in find all solution version, intermediate states are maintained in each path
+   - this algorithm is slower than depth first search when finding the first solution
+   - this algorithm is faster than depth first search when finding the shortest solution
   "
   (:require
     [clojure.test :refer [deftest is]])
@@ -248,9 +265,67 @@
          (vector? board)]}
   {:board (assoc board move-piece move-to-cell)})
 
+;;; search first
+;;; note that intermediate-states is accumulating in the body of the loop
+(defn not-simple-move? [intermediate-states {:keys [state] :as _path}]
+  (intermediate-states state))
+
+(defn search-first [paths]
+  (let [queue (fn [coll]
+                (reduce conj (PersistentQueue/EMPTY) coll))
+        enqueue-all (fn [queue coll]
+                      {:pre [(= PersistentQueue (type queue))]}
+                      (reduce conj queue coll))
+        dequeue pop]
+    (loop [q (queue paths)
+           intermediate-states #{}]
+      (cond
+        (empty? q) nil
+
+        (solved-path (peek q))
+        (:simple-moves (peek q))
+
+        (not-simple-move? intermediate-states (peek q))
+        (recur (dequeue q) intermediate-states)
+
+        :else
+        (recur (enqueue-all (dequeue q)
+                            (succs (peek q)))
+               (conj intermediate-states (:state (peek q))))))))
+
+(deftest search-first-test
+  (is (= nil (search-first [])))
+  (is (= [{:move-piece     0
+           :move-from-cell 7
+           :move-to-cell   9}]
+         (search-first [{:state               {:board [15 3 11 13 22 25]}
+                         :simple-moves        [{:move-piece     0
+                                                :move-from-cell 7
+                                                :move-to-cell   9}]
+                         :intermediate-states #{}}])))
+  (is (some (set (search [{:state               example-board
+                           :simple-moves        []
+                           :intermediate-states #{}}]))
+            [(search-first [{:state               example-board
+                             :simple-moves        []
+                             :intermediate-states #{}}])])))
+
+(defn solutions-first
+  "State -> [Move]
+  "
+  [state]
+  (search-first (start state)))
+
+(defn safe-landings' [board]
+  (map show-move (solutions-first board)))
+
+(deftest safe-landings'-test
+  (is (= ["5U" "5R" "5U" "2L" "2D" "2L" "0U" "0R" "0U"]
+         (safe-landings' example-board))))
+
 ;;; benchmarks
 (defn safe-landings-all [board]
   (count (safe-landings {:board board})))
 
 (defn safe-landings-first [board]
-  (first (safe-landings {:board board})))
+  (first (safe-landings' {:board board})))
