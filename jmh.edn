@@ -25,6 +25,10 @@
               {:ns   adwh.exhausted-search.breadth-first-search.lunar-landing-puzzle
                :fn   [safe-landings-all
                       safe-landings-first]
+               :args [:state/lunar-landing-board]}
+              {:ns   adwh.exhausted-search.depth-first-search.lunar-landing-puzzle
+               :fn   [safe-landings-all
+                      safe-landings-first]
                :args [:state/lunar-landing-board]}]
  :states     {:nat-steep           {:fn   adwh.benchmark/gen-nat-steep
                                     :args [:param/large-n]}

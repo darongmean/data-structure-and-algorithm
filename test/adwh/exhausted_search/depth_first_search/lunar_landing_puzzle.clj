@@ -245,3 +245,10 @@
   {:pre [;; make sure fast update by index
          (vector? board)]}
   {:board (assoc board move-piece move-to-cell)})
+
+;;; Benchmarks
+(defn safe-landings-all [board]
+  (count (safe-landings {:board board})))
+
+(defn safe-landings-first [board]
+  (first (safe-landings {:board board})))
