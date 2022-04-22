@@ -111,6 +111,27 @@
                             (moves (peek q)))
                (conj intermediate-grids (:grid (peek q))))))))
 
+(defn dfs [paths]
+  (let [mk-stack vec
+        push-all (fn [stack coll]
+                   {:pre [(vector? stack)]}
+                   (into stack coll))]
+    (loop [stack (mk-stack paths)
+           intermediate-grids #{}]
+      (cond
+        (empty? stack) nil
+
+        (solved (peek stack))
+        (:simple-moves (peek stack))
+
+        (contains? intermediate-grids (:grid (peek stack)))
+        (recur (pop stack) intermediate-grids)
+
+        :else
+        (recur (push-all (pop stack)
+                         (moves (peek stack)))
+               (conj intermediate-grids (:grid (peek stack))))))))
+
 ;;; Implementations and helper functions
 
 (defn start [pairs]
@@ -205,3 +226,21 @@
           {:move-vehicle 0 :move-to 19}
           {:move-vehicle 0 :move-to 20}]
          (solution-bfs example-pairs))))
+
+(defn solution-dfs [pairs]
+  (dfs (start pairs)))
+
+(deftest solution-dfs-test
+  (is (= nil
+         (solution-dfs [])))
+  (is (= []
+         (solution-dfs [[19 20]])))
+  (is (= [{:move-vehicle 0 :move-to 20}]
+         (solution-dfs [[18 19]])))
+  (is (= [{:move-vehicle 1 :move-to 33}
+          {:move-vehicle 1 :move-to 40}
+          {:move-vehicle 0 :move-to 19}
+          {:move-vehicle 0 :move-to 20}]
+         (solution-dfs [[17 18] [12 26]])))
+  (is (= 557
+         (count (solution-dfs example-pairs)))))
