@@ -18,6 +18,11 @@
    - this might be true in Haskell based on how list generation and lazy evaluation
    - current implementation in Clojure shows that queens-fuse-new-elem-front runs faster in both situation
    - because Clojure is strict evaluation
+
+   Optimize method: exploit the following property to generate only those permutations that can be extended to safe permutations
+   > safe (qs ++ q) = safe qs and newDiag q qs
+   > where newDiag q qs = and [abs (q−q') ̸= r−r' | (r',q') <-> zip [1..] qs]
+   >       where r = length qs + 1
   "
   (:require
     [clojure.test :refer [deftest is]]

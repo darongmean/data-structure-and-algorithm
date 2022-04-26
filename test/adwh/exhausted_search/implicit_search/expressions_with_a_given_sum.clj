@@ -5,6 +5,34 @@
   where `expressions` builds a list of all arithmetic expressions that can be formed from a given list of digits,
         `value` delivers the value of such an expression, and
         `good` tests whether the value is equal to a given target value.
+
+  Optimize method:
+  - exploit a monotonicity condition, in `expressions` function, to archive a partial fusion of the filter test into the generation of expressions
+  - aka fuse `good` function and `expression` function
+  - ex:
+    - based on the monotonicity of expressions built out of × and +
+    - we can pair expressions with their values and only generate expressions whose values are at most the target value
+
+  Monotonic condition: if x <= y then f(x) <= f(y)
+  - thus x <= y => value(glue (x digit)) <= value(glue (y digit))
+  - it's true for digit 1 to 9 and expressions *, +
+  - that is if x and y are positive integers, then the larger of x and y is no greater than any of the expressions 10 x + y, 10 y + x, x + y, or x*y.
+
+  The claim does not hold when
+  - zero values are allowed, because x <= x*0 is false for positive x.
+  - exponentiation is allowed, because x <= yˆx is false unless y>1.
+  - decimal points are allowed in expressions.
+  i,e.
+  - solutions 100 [0..9] != solutions1 100 [0..9] because the left-hand side returns 17 solutions,
+    while the right-hand side returns only 14.
+  - solutions 100 [1..9] != solutions1 100 [1..9] if we allowed decimal points
+    the seven ways of extending 2×3+··· are
+    .12×3+···  12×3+··· 1.2×3+···
+    .1×2×3+··· 1×2×3...
+    .1+2×3+··· 1+2×3+···
+    the expression .12x3+... failed to meet monotonicity condition.
+  - solutions 100 [1..9] != solutions1 100 [1..9] if we allowed exponential
+  - we need to use naive solutions for the 3 above situations
   "
   (:refer-clojure :exclude [extend])
   (:require
@@ -262,29 +290,6 @@
     (reduce (fn [expr-pairs digit] (mapcat #(glue % digit) expr-pairs))
             [[[] {}]]
             digits)))
-
-;;;
-;;; Compare time complexity
-;;;
-;;; Finding all solutions
-;;; solutions       75.872    msecs
-;;; solutions-01    2.162458  msecs
-;;;
-;;; Finding first solution
-;;; solutions       37.155708 msecs
-;;; solutions-01    0.638875  msecs
-(comment
-  (println)
-  (println "Compare time complexity of finding all solutions:")
-  (println)
-  (println "ways of sum 100 : " (time (count (solutions 100 (range 9 0 -1)))))
-  (println "optimized ways of sum 100 : " (time (count (solutions-01 100 (range 9 0 -1)))))
-
-  (println)
-  (println "Compare time complexity of finding first solutions:")
-  (println)
-  (println "ways of sum 100 : " (time (first (solutions 100 (range 9 0 -1)))))
-  (println "optimized ways of sum 100 : " (time (first (solutions-01 100 (range 9 0 -1))))))
 
 ;;; Benchmarks
 (defn solutions-all [target]

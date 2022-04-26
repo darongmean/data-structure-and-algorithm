@@ -1,4 +1,52 @@
 (ns adwh.exhausted-search.forward-planning.rush-hour-puzzle
+  "With both DFS and BFS we have basically the strategy of trying sequences of random moves until finding one that work
+   It is possible to improve on random search by suitable forward planning.
+
+   Suppose it is known that a certain sequence of moves is sufficient to take the starting state into a goal state.
+   Such sequence of moves constitutes the `game plan`.
+
+   - If the first move of the game plan is a valid move, then the move is made and the algorithm carries on the rest of the plan.
+   - If it's not, then it may be possible to find one or more lists of `preparatory moves`, each of which, - provided they can
+   be carried out - leads to a state in which a move is a legal move.
+   - After making these preparatory moves, the move can be made, in which case the rest of the plan is carried out as before.
+   - Preparatory move process may be repeated.
+   - Planning process may be repeated.
+   - In the case that no preparatory moves can be found, a random move is made instead.
+
+   > type Plan = [Move]
+   >
+   > gamePlan :: State -> Plan
+   > preMoves :: State -> Move [Plan]
+   >
+   > newPlans :: State -> Plan -> [Plan]
+   > newPlans t [] = []
+   > newPlans t (m:ms) = if elem m (moves t)
+   >                     then [m:ms]
+   >                     else concat [newPlans t (pms ++ m:ms) | pms <- preMoves t m, all (notMember ms) pms]
+
+   We can define the planning algorithm to have the same structure as the time-efficient version of breadth-first search
+   > type Path = ([Move],State,Plan)
+   > type Frontier = [Path]
+   > psolve :: State -> Maybe [ Move ]
+   > psolve t = psearch [ ] [ ] [ ([ ], t, gameplan t) ]
+   > where
+   >     psearch :: [ State ] -> Frontier -> Frontier -> Maybe [ Move ]
+   >     psearch ts [] []                  = Nothing
+   >     psearch ts qs []                  = psearchts [] qs
+   >     psearch ts qs ((ms, t, plan) : ps)
+   >         | solved t  = Just ms
+   >         | elem t ts = psearch ts qs ps
+   >         | otherwise = psearch (t:ts) (bsuccs(ms,t,plan) + qs) (asuccs (ms,t,plan) + ps)
+   >     {- all plans in the main frontier are tried first in a depth-first manner until one of them success or fail -}
+   >     asuccs :: Path -> [ Path ]
+   >     asuccs (ms,t,plan) = [(ms+[m],move t m,p) | m:p <- newplans t plan]
+   >     {- if all plains fail, we make some legal move at random and start again with a new game plan -}
+   >     bsuccs :: Path -> [ Path ]
+   >     bsuccs (ms,t, ) = [(ms+[m], t′, gameplan t′) |m <- moves t,let t′ = move t m]
+
+   Requirement:
+   - plans cannot contain repeated moves.
+   "
   (:require
     [clojure.test :refer [deftest is]])
   (:import
@@ -312,13 +360,18 @@
                 (reduce conj (PersistentQueue/EMPTY) coll))
         enqueue-all (fn [q coll]
                       {:pre [(is (= PersistentQueue (type q)))]}
-                      (reduce conj q coll))]
+                      (reduce conj q coll))
+        push-all (fn [stack coll]
+                   {:pre [(is (vector? stack))]}
+                   (reduce conj stack coll))]
     ;; [State] -> Frontier -> Frontier -> Maybe [Move]
     (loop [;; [State]
            intermediate-grids #{}
            ;; Frontier
            q (queue [])
            ;; Frontier
+           ;; all plans in the main frontier are tried first in a depth-first manner until
+           ;; one of them succeeds or all fail.
            plan-stack (vec paths)]
       (cond
         (and (empty? plan-stack) (empty? q)) nil
@@ -336,9 +389,9 @@
         (recur (conj intermediate-grids (:grid (peek plan-stack)))
                (enqueue-all q
                             (bsuccs (peek plan-stack)))
-               (reduce conj
-                       (pop plan-stack)
-                       (asuccs (peek plan-stack))))))))
+               (push-all
+                 (pop plan-stack)
+                 (asuccs (peek plan-stack))))))))
 
 (defn solution-psearch [pairs]
   (psearch (start' pairs)))
