@@ -29,13 +29,21 @@
               {:ns   adwh.exhausted-search.depth-first-search.lunar-landing-puzzle
                :fn   [safe-landings-all
                       safe-landings-first]
-               :args [:state/lunar-landing-board]}]
+               :args [:state/lunar-landing-board]}
+              {:ns   adwh.exhausted-search.forward-planning.rush-hour-puzzle
+               :fn   [solution-bfs-first
+                      solution-dfs-first
+                      solution-psearch-first]
+               :args [:state/rush-hour-grid]}]
  :states     {:nat-steep           {:fn   adwh.benchmark/gen-nat-steep
                                     :args [:param/large-n]}
               :lunar-landing-board {:fn   adwh.benchmark/gen-lunar-landing-puzzle-board
-                                    :args []}}
+                                    :args []}
+              :rush-hour-grid     {:fn   adwh.benchmark/gen-rushing-hour-grid
+                                   :args [:param/level]}}
  :params     {:large-n [10 20 40 80]
-              :small-n [1 2 4 8]}
+              :small-n [1 2 4 8]
+              :level   [1 2 3 4 5 6]}
  :options    {:jmh/default {:mode               :average
                             :threads            10
                             :ops-per-invocation 10

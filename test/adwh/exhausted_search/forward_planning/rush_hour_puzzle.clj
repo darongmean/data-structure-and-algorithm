@@ -559,3 +559,13 @@
                      {:move-vehicle 1, :move-to 40}
                      {:move-vehicle 0, :move-to 19}
                      {:move-vehicle 0, :move-to 20}]))))
+
+;;; Benchmark
+(defn solution-bfs-first [pairs]
+  (count (solution-bfs pairs)))
+
+(defn solution-dfs-first [pairs]
+  (count (solution-dfs pairs)))
+
+(defn solution-psearch-first [pairs]
+  (count (solution-psearch pairs)))
