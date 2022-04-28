@@ -8,4 +8,6 @@
                                 :exec-fn     jmh.task/run}
            :env/test           {:extra-paths ["test"]
                                 :extra-deps  {com.gfredericks/test.chuck {:mvn/version "0.2.13"}
-                                              org.clojure/test.check     {:mvn/version "1.1.1"}}}}}
+                                              org.clojure/test.check     {:mvn/version "1.1.1"}
+                                              com.hyperfiddle/rcf        {:mvn/version "20220405"}}
+                                :jvm-opts ["-Dhyperfiddle.rcf.enabled=true" "-Dhyperfiddle.rcf.generate-tests=true"]}}}
