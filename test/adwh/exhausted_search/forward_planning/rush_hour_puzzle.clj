@@ -205,26 +205,26 @@
 
 (defn move
   "State -> Move -> State"
-  [grid {:keys [move-vehicle move-to] :as _move}]
+  [grid {:keys [move-vehicle fill-to] :as _move}]
   (let [adjust (fn [{:keys [cell-rear cell-front]}]
-                 (if (< cell-front move-to)
-                   (parse-vehicle [(+ move-to (- cell-rear cell-front)) move-to])
-                   (parse-vehicle [move-to (+ move-to (- cell-front cell-rear))])))]
+                 (if (< cell-front fill-to)
+                   (parse-vehicle [(+ fill-to (- cell-rear cell-front)) fill-to])
+                   (parse-vehicle [fill-to (+ fill-to (- cell-front cell-rear))])))]
     (update grid move-vehicle adjust)))
 
 (deftest move-test
   ;; move left
   (is (= (grid [[16 17] [12 26]])
-         (move (grid [[17 18] [12 26]]) {:move-vehicle 0 :move-to 16})))
+         (move (grid [[17 18] [12 26]]) {:move-vehicle 0 :fill-to 16})))
   ;; move right
   (is (= (grid [[18 19] [12 26]])
-         (move (grid [[17 18] [12 26]]) {:move-vehicle 0 :move-to 19})))
+         (move (grid [[17 18] [12 26]]) {:move-vehicle 0 :fill-to 19})))
   ;; move up
   (is (= (grid [[17 18] [5 19]])
-         (move (grid [[17 18] [12 26]]) {:move-vehicle 1 :move-to 5})))
+         (move (grid [[17 18] [12 26]]) {:move-vehicle 1 :fill-to 5})))
   ;; move down
   (is (= (grid [[17 18] [19 33]])
-         (move (grid [[17 18] [12 26]]) {:move-vehicle 1 :move-to 33}))))
+         (move (grid [[17 18] [12 26]]) {:move-vehicle 1 :fill-to 33}))))
 
 (defn moves
   "State -> [Move]
@@ -249,7 +249,7 @@
     (for [[vehicle-number vehicle] (map vector (range) grid)
           cell (steps vehicle)
           :when (not (occupied-cells? cell))]
-      {:move-vehicle vehicle-number :move-to cell})))
+      {:move-vehicle vehicle-number :fill-to cell})))
 
 (defn succs
   "Path -> [Path]
@@ -262,12 +262,12 @@
 
 (deftest succs-test
   ;; move left or right
-  (is (= [{:grid (grid [[16 17]]) :simple-moves [{:move-vehicle 0 :move-to 16}]}
-          {:grid (grid [[18 19]]) :simple-moves [{:move-vehicle 0 :move-to 19}]}]
+  (is (= [{:grid (grid [[16 17]]) :simple-moves [{:move-vehicle 0 :fill-to 16}]}
+          {:grid (grid [[18 19]]) :simple-moves [{:move-vehicle 0 :fill-to 19}]}]
          (succs {:grid (grid [[17 18]]) :simple-moves []})))
   ;; move up or down
-  (is (= [{:grid (grid [[5 19]]) :simple-moves [{:move-vehicle 0 :move-to 5}]}
-          {:grid (grid [[19 33]]) :simple-moves [{:move-vehicle 0 :move-to 33}]}]
+  (is (= [{:grid (grid [[5 19]]) :simple-moves [{:move-vehicle 0 :fill-to 5}]}
+          {:grid (grid [[19 33]]) :simple-moves [{:move-vehicle 0 :fill-to 33}]}]
          (succs {:grid (grid [[12 26]]) :simple-moves []}))))
 
 ;;; Solutions
@@ -279,18 +279,18 @@
          (solution-bfs [])))
   (is (= []
          (solution-bfs [[19 20]])))
-  (is (= [{:move-vehicle 0 :move-to 20}]
+  (is (= [{:move-vehicle 0 :fill-to 20}]
          (solution-bfs [[18 19]])))
-  (is (= [{:move-vehicle 1 :move-to 33}
-          {:move-vehicle 1 :move-to 40}
-          {:move-vehicle 0 :move-to 19}
-          {:move-vehicle 0 :move-to 20}]
+  (is (= [{:move-vehicle 1 :fill-to 33}
+          {:move-vehicle 1 :fill-to 40}
+          {:move-vehicle 0 :fill-to 19}
+          {:move-vehicle 0 :fill-to 20}]
          (solution-bfs [[17 18] [12 26]])))
-  (is (= [{:move-vehicle 4 :move-to 31}
-          {:move-vehicle 3 :move-to 33}
-          {:move-vehicle 3 :move-to 40}
-          {:move-vehicle 0 :move-to 19}
-          {:move-vehicle 0 :move-to 20}]
+  (is (= [{:move-vehicle 4 :fill-to 31}
+          {:move-vehicle 3 :fill-to 33}
+          {:move-vehicle 3 :fill-to 40}
+          {:move-vehicle 0 :fill-to 19}
+          {:move-vehicle 0 :fill-to 20}]
          (solution-bfs example-pairs))))
 
 (defn solution-dfs [pairs]
@@ -301,12 +301,12 @@
          (solution-dfs [])))
   (is (= []
          (solution-dfs [[19 20]])))
-  (is (= [{:move-vehicle 0 :move-to 20}]
+  (is (= [{:move-vehicle 0 :fill-to 20}]
          (solution-dfs [[18 19]])))
-  (is (= [{:move-vehicle 1 :move-to 33}
-          {:move-vehicle 1 :move-to 40}
-          {:move-vehicle 0 :move-to 19}
-          {:move-vehicle 0 :move-to 20}]
+  (is (= [{:move-vehicle 1 :fill-to 33}
+          {:move-vehicle 1 :fill-to 40}
+          {:move-vehicle 0 :fill-to 19}
+          {:move-vehicle 0 :fill-to 20}]
          (solution-dfs [[17 18] [12 26]])))
   (is (= 557
          (count (solution-dfs example-pairs)))))
@@ -401,18 +401,18 @@
          (solution-psearch [])))
   (is (= []
          (solution-psearch [[19 20]])))
-  (is (= [{:move-vehicle 0 :move-to 20}]
+  (is (= [{:move-vehicle 0 :fill-to 20}]
          (solution-psearch [[18 19]])))
-  (is (= [{:move-vehicle 1 :move-to 33}
-          {:move-vehicle 1 :move-to 40}
-          {:move-vehicle 0 :move-to 19}
-          {:move-vehicle 0 :move-to 20}]
+  (is (= [{:move-vehicle 1 :fill-to 33}
+          {:move-vehicle 1 :fill-to 40}
+          {:move-vehicle 0 :fill-to 19}
+          {:move-vehicle 0 :fill-to 20}]
          (solution-psearch [[17 18] [12 26]])))
-  (is (= [{:move-vehicle 4 :move-to 31}
-          {:move-vehicle 3 :move-to 33}
-          {:move-vehicle 3 :move-to 40}
-          {:move-vehicle 0 :move-to 19}
-          {:move-vehicle 0 :move-to 20}]
+  (is (= [{:move-vehicle 4 :fill-to 31}
+          {:move-vehicle 3 :fill-to 33}
+          {:move-vehicle 3 :fill-to 40}
+          {:move-vehicle 0 :fill-to 19}
+          {:move-vehicle 0 :fill-to 20}]
          (solution-psearch example-pairs)))
   (is (< 0
          (count (solution-psearch [[17 18] [1 15] [2 9] [3 10] [4 11] [5 6] [12 19] [13 27] [24 26] [31 38] [33 34] [36 37] [40 41]])))))
@@ -433,61 +433,61 @@
 
    Convert multi-step move to one-step move.
   "
-  [grid {:keys [move-vehicle move-to] :as _move}]
+  [grid {:keys [move-vehicle fill-to] :as _move}]
   (let [{:keys [cell-rear cell-front horizontal?]} (nth grid move-vehicle)
         cells (cond
-                (some #{cell-rear cell-front} [move-to])
-                (list move-to)
+                (some #{cell-rear cell-front} [fill-to])
+                (list fill-to)
 
-                (and horizontal? (< cell-rear cell-front move-to))
-                (range' (+ cell-front 1) move-to 1)
+                (and horizontal? (< cell-rear cell-front fill-to))
+                (range' (+ cell-front 1) fill-to 1)
 
-                (and horizontal? (< cell-rear move-to cell-front))
-                (list move-to)
+                (and horizontal? (< cell-rear fill-to cell-front))
+                (list fill-to)
 
-                (and horizontal? (< move-to cell-rear cell-front))
-                (range' (- cell-rear 1) (- cell-rear (- cell-rear move-to)) -1)
+                (and horizontal? (< fill-to cell-rear cell-front))
+                (range' (- cell-rear 1) (- cell-rear (- cell-rear fill-to)) -1)
 
-                (< cell-rear cell-front move-to)
-                (range' (+ cell-front 7) move-to 7)
+                (< cell-rear cell-front fill-to)
+                (range' (+ cell-front 7) fill-to 7)
 
-                (< cell-rear move-to cell-front)
-                (list move-to)
+                (< cell-rear fill-to cell-front)
+                (list fill-to)
 
-                (< move-to cell-rear cell-front)
-                (range' (- cell-rear 7) move-to -7))]
+                (< fill-to cell-rear cell-front)
+                (range' (- cell-rear 7) fill-to -7))]
     (for [c cells]
-      {:move-vehicle move-vehicle :move-to c})))
+      {:move-vehicle move-vehicle :fill-to c})))
 
 (deftest expand-steps-test
   ;; horizontal
-  (is (= [{:move-vehicle 0 :move-to 19}
-          {:move-vehicle 0 :move-to 20}]
-         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :move-to 20})))
-  (is (= [{:move-vehicle 0 :move-to 18}]
-         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :move-to 18})))
-  (is (= [{:move-vehicle 0 :move-to 17}]
-         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :move-to 17})))
-  (is (= [{:move-vehicle 0 :move-to 16}]
-         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :move-to 16})))
-  (is (= [{:move-vehicle 0 :move-to 15}]
-         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :move-to 15})))
-  (is (= [{:move-vehicle 0 :move-to 15}
-          {:move-vehicle 0 :move-to 14}]
-         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :move-to 14})))
+  (is (= [{:move-vehicle 0 :fill-to 19}
+          {:move-vehicle 0 :fill-to 20}]
+         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :fill-to 20})))
+  (is (= [{:move-vehicle 0 :fill-to 18}]
+         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :fill-to 18})))
+  (is (= [{:move-vehicle 0 :fill-to 17}]
+         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :fill-to 17})))
+  (is (= [{:move-vehicle 0 :fill-to 16}]
+         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :fill-to 16})))
+  (is (= [{:move-vehicle 0 :fill-to 15}]
+         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :fill-to 15})))
+  (is (= [{:move-vehicle 0 :fill-to 15}
+          {:move-vehicle 0 :fill-to 14}]
+         (expand-steps (grid [[16 18]]) {:move-vehicle 0 :fill-to 14})))
   ;; vertical
-  (is (= [{:move-vehicle 0, :move-to 33}
-          {:move-vehicle 0, :move-to 40}]
-         (expand-steps (grid [[12 26]]) {:move-vehicle 0 :move-to 40})))
-  (is (= [{:move-vehicle 0, :move-to 26}]
-         (expand-steps (grid [[12 26]]) {:move-vehicle 0 :move-to 26})))
-  (is (= [{:move-vehicle 0, :move-to 19}]
-         (expand-steps (grid [[12 26]]) {:move-vehicle 0 :move-to 19})))
-  (is (= [{:move-vehicle 0, :move-to 12}]
-         (expand-steps (grid [[12 26]]) {:move-vehicle 0 :move-to 12})))
-  (is (= [{:move-vehicle 0, :move-to 12}
-          {:move-vehicle 0, :move-to 5}]
-         (expand-steps (grid [[19 33]]) {:move-vehicle 0 :move-to 5}))))
+  (is (= [{:move-vehicle 0, :fill-to 33}
+          {:move-vehicle 0, :fill-to 40}]
+         (expand-steps (grid [[12 26]]) {:move-vehicle 0 :fill-to 40})))
+  (is (= [{:move-vehicle 0, :fill-to 26}]
+         (expand-steps (grid [[12 26]]) {:move-vehicle 0 :fill-to 26})))
+  (is (= [{:move-vehicle 0, :fill-to 19}]
+         (expand-steps (grid [[12 26]]) {:move-vehicle 0 :fill-to 19})))
+  (is (= [{:move-vehicle 0, :fill-to 12}]
+         (expand-steps (grid [[12 26]]) {:move-vehicle 0 :fill-to 12})))
+  (is (= [{:move-vehicle 0, :fill-to 12}
+          {:move-vehicle 0, :fill-to 5}]
+         (expand-steps (grid [[19 33]]) {:move-vehicle 0 :fill-to 5}))))
 
 (defn game-plan
   "Grid -> Plan
@@ -495,7 +495,7 @@
    Assuming we have the ability to make use of multi-step move.
   "
   [_]
-  [{:move-vehicle 0 :move-to 20}])
+  [{:move-vehicle 0 :fill-to 20}])
 
 (defn blocker
   "Grid -> Cell -> (Name, Vehicle)
@@ -522,29 +522,29 @@
     (if horizontal?
       (for [j [(- cell (+ (- cell-front cell-rear) 1)) (+ cell (+ (- cell-front cell-rear) 1))]
             :when (< a j b)]
-        {:move-vehicle blocker-name :move-to j})
+        {:move-vehicle blocker-name :fill-to j})
       (for [j [(- cell (+ (- cell-front cell-rear) 7)) (+ cell (+ (- cell-front cell-rear) 7))]
             :when (< 0 j 42)]
-        {:move-vehicle blocker-name :move-to j}))))
+        {:move-vehicle blocker-name :fill-to j}))))
 
 (deftest freeing-moves-test
-  (is (= [{:move-vehicle 0 :move-to 15}
-          {:move-vehicle 0 :move-to 19}]
+  (is (= [{:move-vehicle 0 :fill-to 15}
+          {:move-vehicle 0 :fill-to 19}]
          (freeing-moves 17 (blocker (grid [[17 18]]) 17)))))
 
 (defn pre-moves
   "Grid -> Move -> [Plan]
   "
-  [grid {:keys [move-to] :as _move}]
-  (for [m (some->> (blocker grid move-to) (freeing-moves move-to))]
+  [grid {:keys [fill-to] :as _move}]
+  (for [m (some->> (blocker grid fill-to) (freeing-moves fill-to))]
     [m]))
 
 (deftest pre-moves-test
   (is (= []
-         (pre-moves (grid [[17 18]]) {:move-vehicle 0 :move-to 20})))
-  (is (= [[{:move-vehicle 0 :move-to 15}]
-          [{:move-vehicle 0 :move-to 19}]]
-         (pre-moves (grid [[17 18]]) {:move-vehicle 0 :move-to 17}))))
+         (pre-moves (grid [[17 18]]) {:move-vehicle 0 :fill-to 20})))
+  (is (= [[{:move-vehicle 0 :fill-to 15}]
+          [{:move-vehicle 0 :fill-to 19}]]
+         (pre-moves (grid [[17 18]]) {:move-vehicle 0 :fill-to 17}))))
 
 (defn new-plans
   "State -> Plan -> [Plan]
@@ -577,41 +577,41 @@
                          remaining-plans)))))))
 
 (deftest new-plans-test
-  (is (= [[{:move-vehicle 0, :move-to 16}]]
-         (new-plans (grid [[17 18]]) [{:move-vehicle 0 :move-to 16}])))
-  (is (= [[{:move-vehicle 0 :move-to 19}
-           {:move-vehicle 0 :move-to 20}]]
-         (new-plans (grid [[17 18]]) [{:move-vehicle 0 :move-to 20}])))
-  (is (= [[{:move-vehicle 0, :move-to 5}
-           {:move-vehicle 0, :move-to 26}]]
-         (new-plans (grid [[12 26]]) [{:move-vehicle 0 :move-to 26}])))
-  (is (= [[{:move-vehicle 0 :move-to 33}
-           {:move-vehicle 0 :move-to 40}]]
-         (new-plans (grid [[12 26]]) [{:move-vehicle 0 :move-to 40}])))
-  (is (= [[{:move-vehicle 1 :move-to 33}
-           {:move-vehicle 1 :move-to 40}
-           {:move-vehicle 0 :move-to 19}
-           {:move-vehicle 0 :move-to 20}]]
-         (new-plans (grid [[17 18] [12 26]]) [{:move-vehicle 0 :move-to 20}])))
-  (is (= [[{:move-vehicle 0 :move-to 19}
-           {:move-vehicle 0 :move-to 20}]]
-         (new-plans (grid [[17 18] [6 20] [27 41]]) [{:move-vehicle 0 :move-to 20}])))
+  (is (= [[{:move-vehicle 0, :fill-to 16}]]
+         (new-plans (grid [[17 18]]) [{:move-vehicle 0 :fill-to 16}])))
+  (is (= [[{:move-vehicle 0 :fill-to 19}
+           {:move-vehicle 0 :fill-to 20}]]
+         (new-plans (grid [[17 18]]) [{:move-vehicle 0 :fill-to 20}])))
+  (is (= [[{:move-vehicle 0, :fill-to 5}
+           {:move-vehicle 0, :fill-to 26}]]
+         (new-plans (grid [[12 26]]) [{:move-vehicle 0 :fill-to 26}])))
+  (is (= [[{:move-vehicle 0 :fill-to 33}
+           {:move-vehicle 0 :fill-to 40}]]
+         (new-plans (grid [[12 26]]) [{:move-vehicle 0 :fill-to 40}])))
+  (is (= [[{:move-vehicle 1 :fill-to 33}
+           {:move-vehicle 1 :fill-to 40}
+           {:move-vehicle 0 :fill-to 19}
+           {:move-vehicle 0 :fill-to 20}]]
+         (new-plans (grid [[17 18] [12 26]]) [{:move-vehicle 0 :fill-to 20}])))
+  (is (= [[{:move-vehicle 0 :fill-to 19}
+           {:move-vehicle 0 :fill-to 20}]]
+         (new-plans (grid [[17 18] [6 20] [27 41]]) [{:move-vehicle 0 :fill-to 20}])))
   (is (= []
-         (new-plans (grid [[18 19] [6 20] [27 41]]) [{:move-vehicle 0 :move-to 20}])))
-  (is (= [[{:move-vehicle 0, :move-to 18}
-           {:move-vehicle 0, :move-to 20}]]
-         (new-plans (grid [[19 20]]) [{:move-vehicle 0 :move-to 20}])))
-  (is (= [[{:move-vehicle 2, :move-to 31}
-           {:move-vehicle 1, :move-to 33}
-           {:move-vehicle 1, :move-to 40}
-           {:move-vehicle 0, :move-to 19}
-           {:move-vehicle 0, :move-to 20}]]
+         (new-plans (grid [[18 19] [6 20] [27 41]]) [{:move-vehicle 0 :fill-to 20}])))
+  (is (= [[{:move-vehicle 0, :fill-to 18}
+           {:move-vehicle 0, :fill-to 20}]]
+         (new-plans (grid [[19 20]]) [{:move-vehicle 0 :fill-to 20}])))
+  (is (= [[{:move-vehicle 2, :fill-to 31}
+           {:move-vehicle 1, :fill-to 33}
+           {:move-vehicle 1, :fill-to 40}
+           {:move-vehicle 0, :fill-to 19}
+           {:move-vehicle 0, :fill-to 20}]]
          (new-plans (grid [[17 18] [12 26] [32 33]])
-                    [{:move-vehicle 2, :move-to 31}
-                     {:move-vehicle 1, :move-to 33}
-                     {:move-vehicle 1, :move-to 40}
-                     {:move-vehicle 0, :move-to 19}
-                     {:move-vehicle 0, :move-to 20}]))))
+                    [{:move-vehicle 2, :fill-to 31}
+                     {:move-vehicle 1, :fill-to 33}
+                     {:move-vehicle 1, :fill-to 40}
+                     {:move-vehicle 0, :fill-to 19}
+                     {:move-vehicle 0, :fill-to 20}]))))
 
 ;;; Benchmark
 (defn solution-bfs-first [pairs]
