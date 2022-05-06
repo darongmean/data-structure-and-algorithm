@@ -179,7 +179,12 @@
   ;; search in simple graph
   (reset! debug-looping 0)
 
-  (t-star graph (constantly 0) #(= :D %) :A)
+  (t-star graph
+          ;; optimistic heuristic
+          ;; example, :A -> 9 <= cost(:A -> :C -> :B -> :D) = 2 + 2 +5 = 9
+          {:A 9 :B 1 :C 5 :D 0}
+          #(= :D %)
+          :A)
   := [[:A :C :B :D] 9]
   @debug-looping := 5
 

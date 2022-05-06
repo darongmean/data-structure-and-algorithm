@@ -145,7 +145,10 @@
   ;; search in simple graph
   (reset! debug-looping 0)
 
-  (a-star graph (constantly 0) #(= :D %) :A)
+  (a-star graph
+          {:A 9 :B 1 :C 5 :D 0}
+          #(= :D %)
+          :A)
   := [[:A :C :B :D] 9]
 
   @debug-looping := 5
