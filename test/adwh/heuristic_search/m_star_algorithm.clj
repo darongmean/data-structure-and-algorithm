@@ -1,13 +1,19 @@
-(ns adwh.heuristic-search.a-star-algorithm
-  "A* remedy the fact that T* may not terminate.
+(ns adwh.heuristic-search.m-star-algorithm
+  "M* remedy the fact that T* may not terminate.
 
-   It is to maintain a finite map from vertices to path costs instead of a set containing the vertices that have already been visited.
-   - If a new path to a vertex is discovered with a lower cost, then the path can be explored further.
-   - Otherwise the path can be abandoned.
+   A heuristic `h` is monotonic
+   - if `h(u) <= c + h(v)` for every edge `(u,v,c)` of the graph
+   - where `c` is the cost of the edge
+   Ex: A to B cost 5. Thus, `h` is monotonic if `h(A) <= 5 + h(B)`
 
-   A* requirements:
-   - the heuristic is optimistic
+   M* requirements:
+   - the heuristic is monotonic
    - edge costs are positive numbers
+
+   Note:
+   - It is more efficient than A* because a successor path is never added to the frontier if its endpoint has already been processed.
+   - The queue contains redundant entries, since there are two paths to each of C, D, and E, only one of which in each case will ever be further explored.
+   - One solution to this problem is to employ a more refined data structure than a priority queue, called a priority search queue (PSQ).
   "
   (:require
     [clojure.data.priority-map :refer [priority-map]]
@@ -74,26 +80,15 @@
       (insert-q (make-path [vertex-source] 0)
                 (heuristic-fn vertex-source))))
 
-(defn successors [graph-fn heuristic-fn [vertices cost :as path]]
-  (for [[v c] (graph-fn (end path))]
+(defn successors [graph-fn heuristic-fn seen-vertices? [vertices cost :as path]]
+  (for [[v c] (graph-fn (end path))
+        :when (not (seen-vertices? v))]
     [(make-path (conj vertices v) (+ cost c))
      (+ cost c (heuristic-fn v))]))
 
-(defn better [[vertices cost :as _path] vertex->cost]
-  (some-> (peek vertices)
-          (vertex->cost)
-          (<= cost)))
-
-(tests
-  (better (make-path [:A :B] 10) {:B 9}) := true
-  (better (make-path [:A :B] 10) {:B 10}) := true
-  (better (make-path [:A :B] 10) {:B 11}) := false
-  (better (make-path [] 10) {:B 11}) := nil
-  )
-
 (def debug-looping (atom 0))
 
-(defn a-search [graph-fn heuristic-fn goal-fn vertex->cost pq]
+(defn m-search [graph-fn heuristic-fn goal-fn seen-vertices? pq]
   {:pre [(is (= PersistentPriorityMap (type pq)))]}
 
   (swap! debug-looping inc)
@@ -104,28 +99,27 @@
 
       (goal-fn (end path-with-min-cost)) path-with-min-cost
 
-      ;; The test better determines of a path whether another path to the same endpoint but with a smaller cost has already been found.
-      ;; If so, the path can be abandoned.
-      (better path-with-min-cost vertex->cost)
+      ;; Ensure that no vertex is ever processed more than once
+      (seen-vertices? (end path-with-min-cost))
       (recur graph-fn
              heuristic-fn
              goal-fn
-             vertex->cost
+             seen-vertices?
              remaining-paths)
 
       :else
       (recur graph-fn
              heuristic-fn
              goal-fn
-             (assoc vertex->cost (end path-with-min-cost) (cost path-with-min-cost))
+             (conj seen-vertices? (end path-with-min-cost))
              (add-list-q remaining-paths
-                         (successors graph-fn heuristic-fn path-with-min-cost))))))
+                         (successors graph-fn heuristic-fn seen-vertices? path-with-min-cost))))))
 
-(defn a-star [graph-fn heuristic-fn goal-fn vertex-source]
-  (a-search graph-fn
+(defn m-star [graph-fn heuristic-fn goal-fn vertex-source]
+  (m-search graph-fn
             heuristic-fn
             goal-fn
-            {}
+            #{}
             (start heuristic-fn vertex-source)))
 
 (tests
@@ -138,37 +132,62 @@
      :B [[:D 5]]
      :C [[:B 2]]})
 
-  (successors graph (constantly 2) [[:A] 1])
+  (successors graph (constantly 2) #{} [[:A] 1])
   := [[(make-path [:A :B] 6) 8]
       [(make-path [:A :C] 3) 5]]
 
   ;; search in simple graph
   (reset! debug-looping 0)
 
-  (a-star graph
-          {:A 9 :B 1 :C 5 :D 0}
+  (m-star graph
+          (constantly 0)
           #(= :D %)
           :A)
   := [[:A :C :B :D] 9]
 
   @debug-looping := 5
 
+  ;; search in complex graph
+  (reset! debug-looping 0)
+
+  (m-star {:A [[:B 3] [:C 10] [:D 20] [:E 20]]
+           :B [[:A 3] [:C 5] [:D 8] [:E 20]]
+           :C [[:A 10] [:B 5] [:D 2] [:E 10]]
+           :D [[:A 20] [:B 8] [:C 2] [:E 6]]
+           :E [[:A 20] [:B 20] [:C 10] [:D 6] [:F 1]]}
+          {:A 10 :B 10 :C 5 :D 5 :E 0 :F 0}
+          #(= :F %)
+          :A)
+  := [[:A :B :C :D :E :F] 17]
+
+  @debug-looping := 8
+
+  ;;; search in simple graph, but heuristic function is not monotonic.
+  ;;; Hence, the result is not optimal.
+  ;;; heuristic function is not monotonic because,
+  ;;; the edge from `C` to `B` has cost 2 but `h(C) > 2 + h(B)`, aka 5 > 2 + 1
+  (m-star graph
+          {:A 9 :B 1 :C 5 :D 0}
+          #(= :D %)
+          :A)
+  := [[:A :B :D] 10]
+
   ;; search in oscillations graph
   (reset! debug-looping 0)
 
-  (a-star {:A [[:B 1]]
+  (m-star {:A [[:B 1]]
            :B [[:A 1] [:C 100]]}
           (constantly 0)
           #(= :C %)
           :A)
   := [[:A :B :C] 101]
 
-  @debug-looping := 4
+  @debug-looping := 3
 
   ;; search in oscillations graph (T* oscillate about 2^50 times)
   (reset! debug-looping 0)
 
-  (a-star {:A [[:B 1] [:D 1]]
+  (m-star {:A [[:B 1] [:D 1]]
            :B [[:A 1] [:C 100]]
            :D [[:A 1]]}
           (constantly 0)
@@ -176,12 +195,12 @@
           :A)
   := [[:A :B :C] 101]
 
-  @debug-looping := 6
+  @debug-looping := 4
 
   ;; search in disconnected graph
   (reset! debug-looping 0)
 
-  (a-star {:A [[:B 1]]
+  (m-star {:A [[:B 1]]
            :C []}
           (constantly 0)
           #(= :C %)
