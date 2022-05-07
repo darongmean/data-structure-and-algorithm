@@ -10,11 +10,11 @@
    - edge costs are positive numbers
   "
   (:require
-    [clojure.data.priority-map :refer [priority-map]]
     [clojure.test :refer [is]]
-    [hyperfiddle.rcf :refer [tests]])
+    [hyperfiddle.rcf :refer [tests]]
+    [shams.priority-queue :as priority-queue])
   (:import
-    (clojure.data.priority_map PersistentPriorityMap)))
+    (shams.priority_queue PersistentPriorityQueue)))
 
 ;;; type Cost = Nat
 ;;; type Graph = Vertex -> [(Vertex,Cost)]
@@ -41,28 +41,31 @@
 
 ;;; PriorityQueue helper functions
 (defn empty-q []
-  {:post [(is (= PersistentPriorityMap (type %)))]}
-  (priority-map))
+  {:post [(is (= PersistentPriorityQueue (type %)))]}
+  (priority-queue/priority-queue second :priority-comparator compare))
 
 (defn insert-q
   [q a p]
-  {:post [(is (= PersistentPriorityMap (type %)))]
-   :pre  [(is (= PersistentPriorityMap (type q)))]}
+  {:post [(is (= PersistentPriorityQueue (type %)))]
+   :pre  [(is (= PersistentPriorityQueue (type q)))]}
   (conj q [a p]))
 
 (defn add-list-q
   [q elem+priority-pairs]
-  {:post [(is (= PersistentPriorityMap (type %)))]
-   :pre  [(is (= PersistentPriorityMap (type q)))]}
+  {:post [(is (= PersistentPriorityQueue (type %)))]
+   :pre  [(is (= PersistentPriorityQueue (type q)))]}
   (reduce conj q elem+priority-pairs))
 
 (defn remove-q
   "Delete the lowest priority"
   [q]
-  {:post [(is (= PersistentPriorityMap (type (second %))))]
-   :pre  [(is (= PersistentPriorityMap (type q)))]}
-  (let [[lowest-val _] (peek q)]
-    [lowest-val (dissoc q lowest-val)]))
+  {:post [(is (= PersistentPriorityQueue (type (second %))))]
+   :pre  [(is (= PersistentPriorityQueue (type q)))]}
+  (let [[lowest-val] (peek q)]
+    [lowest-val
+     (if (empty? q)
+       (empty-q)
+       (pop q))]))
 
 ;;; A* Algorithm
 
@@ -94,7 +97,7 @@
 (def debug-looping (atom 0))
 
 (defn a-search [graph-fn heuristic-fn goal-fn vertex->cost pq]
-  {:pre [(is (= PersistentPriorityMap (type pq)))]}
+  {:pre [(is (= PersistentPriorityQueue (type pq)))]}
 
   (swap! debug-looping inc)
 

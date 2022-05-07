@@ -29,11 +29,11 @@
    - Make stronger assumption about heuristic function `h`, known as M* algorithm.
   "
   (:require
-    [clojure.data.priority-map :refer [priority-map]]
     [clojure.test :refer [is]]
-    [hyperfiddle.rcf :refer [tests]])
+    [hyperfiddle.rcf :refer [tests]]
+    [shams.priority-queue :as priority-queue])
   (:import
-    (clojure.data.priority_map PersistentPriorityMap)))
+    (shams.priority_queue PersistentPriorityQueue)))
 
 ;;; The only difference between breadth-first and depth-first search being the order in which we added newly formed paths to the frontier.
 ;;; With heuristic search the frontier is managed as a priority queue in which the priorities are estimates of how good a path is.
@@ -82,47 +82,51 @@
 
 ;;; PriorityQueue helper functions
 (defn empty-q []
-  {:post [(is (= PersistentPriorityMap (type %)))]}
-  (priority-map))
+  {:post [(is (= PersistentPriorityQueue (type %)))]}
+  (priority-queue/priority-queue second :priority-comparator compare))
 
 (defn insert-q
   [q a p]
-  {:post [(is (= PersistentPriorityMap (type %)))]
-   :pre  [(is (= PersistentPriorityMap (type q)))]}
+  {:post [(is (= PersistentPriorityQueue (type %)))]
+   :pre  [(is (= PersistentPriorityQueue (type q)))]}
   (conj q [a p]))
 
 (defn add-list-q
   [q elem+priority-pairs]
-  {:post [(is (= PersistentPriorityMap (type %)))]
-   :pre  [(is (= PersistentPriorityMap (type q)))]}
+  {:post [(is (= PersistentPriorityQueue (type %)))]
+   :pre  [(is (= PersistentPriorityQueue (type q)))]}
   (reduce conj q elem+priority-pairs))
 
 (defn remove-q
   "Delete the lowest priority"
   [q]
-  {:post [(is (= PersistentPriorityMap (type (second %))))]
-   :pre  [(is (= PersistentPriorityMap (type q)))]}
-  (let [[lowest-val _] (peek q)]
-    [lowest-val (dissoc q lowest-val)]))
+  {:post [(is (= PersistentPriorityQueue (type (second %))))]
+   :pre  [(is (= PersistentPriorityQueue (type q)))]}
+  (let [[lowest-val] (peek q)]
+    [lowest-val
+     (if (empty? q)
+       (empty-q)
+       (pop q))]))
 
 (tests
-  (empty-q) := {}
 
-  (-> (empty-q) (insert-q :a 1) (insert-q :b 2)) := {:a 1 :b 2}
-  (-> (empty-q) (add-list-q [[:b 2] [:a 1]])) := {:a 1 :b 2}
+  (empty-q) := []
+
+  (-> (empty-q) (insert-q :a 1) (insert-q :b 2)) := [[:a 1] [:b 2]]
+  (-> (empty-q) (add-list-q [[:b 2] [:a 1]])) := [[:a 1] [:b 2]]
 
   (-> (empty-q)
       (insert-q :a 1)
       (insert-q :b 2)
       (remove-q))
-  := [:a {:b 2}]
+  := [:a [[:b 2]]]
 
-  (-> (empty-q) (remove-q)) := [nil {}]
+  (-> (empty-q) (remove-q)) := [nil []]
 
   ;; duplicate priority
-  (-> (empty-q) (insert-q :a 1) (insert-q :b 1)) := {:a 1 :b 1}
+  (-> (empty-q) (insert-q :a 1) (insert-q :b 1)) := [[:a 1] [:b 1]]
   ;; duplicate key
-  (-> (empty-q) (insert-q :a 1) (insert-q :a 2)) := {:a 2}
+  (-> (empty-q) (insert-q :a 1) (insert-q :a 2)) := [[:a 1] [:a 2]]
   )
 
 ;;; T* Algorithm
@@ -142,7 +146,7 @@
 (def debug-looping (atom 0))
 
 (defn t-search [graph-fn heuristic-fn goal-fn pq]
-  {:pre [(is (= PersistentPriorityMap (type pq)))]}
+  {:pre [(is (= PersistentPriorityQueue (type pq)))]}
   (swap! debug-looping inc)
   (let [[path-with-min-cost remaining-paths] (remove-q pq)]
     (cond
