@@ -73,7 +73,7 @@
        (empty-q)
        (pop q))]))
 
-;;; A* Algorithm
+;;; M* Algorithm
 
 ;; Vertex -> Bool
 (declare goal)
