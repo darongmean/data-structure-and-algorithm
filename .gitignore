@@ -10,3 +10,4 @@ tmp/
 .clj-kondo
 target
 classes
+.history

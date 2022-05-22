@@ -1,0 +1,9 @@
+- Every functional algorithm that =depends on explicit recursion= can be thought of as a divide-and-conquer algorithm.
+
+- There are 2 important aspects of divide and conquer algorithm
+    1. One is that each subproblem should have a size that is some fraction of the input size, a fraction like n/2 or n/4.
+        - In many cases the subproblems will have equal size, or as close to equal size as possible.
+        - There are also examples of divide-and-conquer algorithms in which the subproblems have different sizes, for example one of size n/5 and the other of size 7 × n/10.
+    2. The subproblems should be independent of each other, so the work done in solving them is not duplicated.
+        - Problems in which the subproblems overlap and have many sub-subproblems in common can be tackled by the =dynamic programming strategy=.
+- Because the subproblems are independent and can be solved concurrently as well as sequentially, divide-and-conquer algorithms are highly suited to exploiting parallelism.
